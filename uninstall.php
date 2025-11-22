@@ -64,7 +64,7 @@ function pressidium_performance_uninstall(): void {
 
     $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}pressidium_performance_optimizations" );
     $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}pressidium_performance_concatenations" );
-    $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}pressidium_performance_concatenations_posts" );
+    $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}pressidium_performance_concatenations_pages" );
 
     // Revert optimized images
     $attachments = $wpdb->get_results(
