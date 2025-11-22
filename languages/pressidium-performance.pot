@@ -1,0 +1,884 @@
+# Copyright (C) 2025 Pressidium®
+# This file is distributed under the GPLv2.
+msgid ""
+msgstr ""
+"Project-Id-Version: Pressidium Performance 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/pressidium-performance\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-11-21T18:07:53+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: pressidium-performance\n"
+
+#. Plugin Name of the plugin
+#: pressidium-performance.php
+#: pressidium-performance.php:80
+#: pressidium-performance.php:97
+#: public/bundle.admin.js:95
+msgid "Pressidium Performance"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: pressidium-performance.php
+msgid "https://pressidium.com/open-source/performance-plugin/"
+msgstr ""
+
+#. Description of the plugin
+#: pressidium-performance.php
+msgid "Speed up your WordPress site, improve Core Web Vitals and enhance user experience with one-click image optimization, CSS & JavaScript minification."
+msgstr ""
+
+#. Author of the plugin
+#: pressidium-performance.php
+msgid "Pressidium®"
+msgstr ""
+
+#. Author URI of the plugin
+#: pressidium-performance.php
+msgid "https://pressidium.com/"
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:84
+msgid "Pressidium Performance Plugin"
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:93
+msgid "Performance"
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:113
+msgid "Fine-tune your optimization settings for optimal results."
+msgstr ""
+
+#. translators: 1: Developer name, 2: Link to the docs.
+#: includes/Admin/Settings/Settings_Page.php:290
+msgid "Developed by %1$s | Curious to learn more? Head over to the %2$s."
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:299
+msgid "docs"
+msgstr ""
+
+#. translators: Plugin version.
+#: includes/Admin/Settings/Settings_Page.php:320
+msgid "Version %s"
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:350
+msgid "Settings"
+msgstr ""
+
+#: includes/Admin/Settings/Settings_Page.php:356
+msgid "Docs"
+msgstr ""
+
+#. translators: Accessibility text.
+#: includes/Admin/Settings/Settings_Page.php:358
+msgid "(opens in a new tab)"
+msgstr ""
+
+#: includes/API/Background_Processes_API.php:119
+#: includes/API/Background_Processes_API.php:159
+#: includes/API/Background_Processes_API.php:199
+#: includes/API/Logs_API.php:55
+#: includes/API/Logs_API.php:84
+#: includes/API/Optimization_API.php:88
+#: includes/API/Optimization_API.php:151
+#: includes/API/Optimization_API.php:198
+#: includes/API/Optimization_API.php:255
+#: includes/API/Optimization_API.php:326
+#: includes/API/Settings_API.php:388
+#: includes/API/Settings_API.php:454
+#: includes/Feedback/Feedback.php:137
+msgid "Invalid nonce."
+msgstr ""
+
+#: includes/API/Background_Processes_API.php:137
+#: includes/API/Background_Processes_API.php:177
+#: includes/API/Background_Processes_API.php:217
+msgid "Background process not found."
+msgstr ""
+
+#: includes/API/Optimization_API.php:161
+msgid "No images found in the media library"
+msgstr ""
+
+#: includes/API/Optimization_API.php:268
+msgid "N/A"
+msgstr ""
+
+#: includes/Feedback/Feedback.php:109
+msgid "Help us improve!"
+msgstr ""
+
+#: includes/Feedback/Feedback.php:111
+msgid "We value your feedback. Please let us know why you’re deactivating Pressidium Performance."
+msgstr ""
+
+#: includes/Feedback/Feedback_API.php:75
+#: includes/Feedback/Feedback_API.php:83
+msgid "Unknown error"
+msgstr ""
+
+#. translators: 1: Plugin name, 2: WordPress version
+#: pressidium-performance.php:79
+msgid "%1$s requires WordPress version %2$s or greater."
+msgstr ""
+
+#. translators: 1: Plugin name, 2: PHP version
+#: pressidium-performance.php:96
+msgid "%1$s requires PHP version %2$s or greater."
+msgstr ""
+
+#. translators: %s: WordPress version.
+#: pressidium-performance.php:171
+msgid "Could not be activated. This plugin requires WordPress %s or higher."
+msgstr ""
+
+#: pressidium-performance.php:180
+msgid "Please update WordPress"
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "Export settings?"
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "You have unsaved changes."
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "Those changes won't be exported. Are you sure you want to proceed?"
+msgstr ""
+
+#: public/bundle.admin.js:3
+#: public/bundle.admin.js:93
+msgid "Cancel"
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "Export anyway"
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "Reset settings?"
+msgstr ""
+
+#: public/bundle.admin.js:3
+#: public/bundle.admin.js:93
+msgid "This action cannot be undone."
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "You are about to reset all settings to the default values. Are you sure you want to proceed?"
+msgstr ""
+
+#: public/bundle.admin.js:3
+msgid "Reset settings"
+msgstr ""
+
+#: public/bundle.admin.js:7
+msgid "Save"
+msgstr ""
+
+#: public/bundle.admin.js:7
+msgid "Export Settings"
+msgstr ""
+
+#: public/bundle.admin.js:7
+msgid "Import Settings"
+msgstr ""
+
+#: public/bundle.admin.js:7
+msgid "Reset Settings"
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Hang tight, we’re prepping your optimization stats!"
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Crunching the numbers. Your optimization stats will show up here once we’re done! 🪄"
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Quickly review how your optimizations are performing."
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Files minified"
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Saved by minifying files"
+msgstr ""
+
+#: public/bundle.admin.js:24
+#: public/bundle.admin.js:86
+msgid "Files concatenated"
+msgstr ""
+
+#: public/bundle.admin.js:24
+msgid "Saved by optimizing images"
+msgstr ""
+
+#. translators: %s: Total number of items.
+#: public/bundle.admin.js:63
+msgid "First page"
+msgstr ""
+
+#: public/bundle.admin.js:63
+msgid "Previous page"
+msgstr ""
+
+#. translators: %1$s: Current page number, %2$s: Total number of pages.
+#: public/bundle.admin.js:66
+msgctxt "pagination"
+msgid "%1$s of %2$s"
+msgstr ""
+
+#: public/bundle.admin.js:66
+msgid "Next page"
+msgstr ""
+
+#: public/bundle.admin.js:66
+msgid "Last page"
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "URL"
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "Is Regex?"
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "Actions"
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "Delete"
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "No exclusions set."
+msgstr ""
+
+#: public/bundle.admin.js:76
+msgid "New Exclusion"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "There are no minifications yet."
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Original URL"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Optimized URL"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Hash"
+msgstr ""
+
+#: public/bundle.admin.js:81
+#: public/bundle.admin.js:86
+#: public/bundle.admin.js:93
+msgid "Size"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Minified at"
+msgstr ""
+
+#: public/bundle.admin.js:81
+#: public/bundle.admin.js:86
+msgid "Last update at"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "The minification feature reduces the size of your website’s CSS and JavaScript files by removing unnecessary spaces, comments, and formatting. This makes your pages load faster and improves overall performance without changing how your website looks or works."
+msgstr ""
+
+#: public/bundle.admin.js:81
+#: public/bundle.admin.js:93
+msgid "Configuration"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Minify scripts"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Will minify JS files"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Won't minify JS files"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Minify stylesheets"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Will minify CSS files"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Won't minify CSS files"
+msgstr ""
+
+#: public/bundle.admin.js:81
+#: public/bundle.admin.js:93
+msgid "Script exclusions"
+msgstr ""
+
+#: public/bundle.admin.js:81
+#: public/bundle.admin.js:93
+msgid "Stylesheet exclusions"
+msgstr ""
+
+#: public/bundle.admin.js:81
+msgid "Minifications"
+msgstr ""
+
+#: public/bundle.admin.js:86
+msgid "There are no concatenations yet."
+msgstr ""
+
+#: public/bundle.admin.js:86
+msgid "Concatenated URL"
+msgstr ""
+
+#: public/bundle.admin.js:86
+msgid "File type"
+msgstr ""
+
+#: public/bundle.admin.js:86
+msgid "Aggregated Hash"
+msgstr ""
+
+#: public/bundle.admin.js:86
+msgid "Concatenated at"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Heads up! This is a beta feature."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Concatenation might not play nicely with every theme or plugin. Use it with caution. If something breaks, try excluding the scripts or stylesheets causing trouble, or disable concatenation entirely."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "The concatenation feature merges multiple CSS and JavaScript files into a single file, reducing the number of HTTP requests your website needs to make. This helps speed up your website, especially for visitors on slower connections."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Concatenate scripts"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Will concatenate JS files"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Won't concatenate JS files"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Concatenate stylesheets"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Will concatenate CSS files"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Won't concatenate CSS files"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Image type"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Should optimize"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Convert to"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "WebP"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "AVIF"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Optimize images?"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "This might take a while."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "You are about to start optimizing images in the background. Are you sure you want to proceed?"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Begin optimizations"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "The image optimization feature compresses your images and automatically converts them to modern formats like WebP or AVIF for faster loading and sharp images."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Universal settings"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Auto optimize"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Will optimize new images automatically"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Won't optimize new images"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Keep original files"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Will retain the originally uploaded images"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Will delete the originally uploaded images"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Preferred image editor"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Prioritize an image editor (GD or Imagick)"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Auto"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "GD"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Imagick"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Learn more about GD and Imagick "
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Format-specific settings"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Exclusions"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Optimize existing images now"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "File"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Type"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "No items in current batch."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Here’s the magic happening behind the scenes 🪄"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Cancelled"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Paused"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Processing"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Queued"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Unknown status"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Process "
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Resume"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Pause"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Current batch:"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Just a sec, we’re gathering all your background processes"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "No processes in queue! All done 🎉"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "There are no logs yet."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Clear logs?"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "You are about to clear all logs. Are you sure you want to proceed?"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Clear logs"
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Here you’ll find helpful debugging logs. If something doesn’t look right, share these logs with us when reporting the issue."
+msgstr ""
+
+#: public/bundle.admin.js:93
+msgid "Copy to clipboard"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "About the Pressidium Performance plugin"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "The Pressidium Performance plugin is designed to supercharge your website’s speed and improve your visitors’ experience by reducing load times and increasing your website’s performance scores. It optimizes JavaScript and CSS by minifying and merging files, while also compressing images in your Media Library ensuring your website runs at top speed without sacrificing quality."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Minify your scripts and stylesheets"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Supercharge your website’s performance by reducing the size of your JavaScript and CSS files, ensuring faster load times."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Concatenate JavaScript and CSS files"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Boost your website’s speed by merging multiple JavaScript and CSS files into a single file, minimizing the number of HTTP requests."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Optimize your images"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Improve your website’s load times by compressing your Media Library images without compromising their quality and converting them to modern formats like WebP and AVIF."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Credits"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Developed and maintained by <a>Pressidium®</a>"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Support"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "To ensure that your issue is addressed efficiently, please use one of the following support channels:"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "WordPress.org support forum: You can open a topic in the <a>Pressidium Performance support forum</a>."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "GitHub issue: You can <a>open an issue on the plugin’s GitHub repository</a> to report a bug or request additional features."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Using these channels helps us keep track of all issues and benefits other users who might have similar questions."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "About Pressidium"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Since 2014, <a>Pressidium</a> has been providing the ultimate in high availability, enterprise-class hosting which is trusted by small businesses through to Fortune 500’s."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "<a>Pressidium N-Tier architecture</a> ensures reliability and security, setting new standards in WordPress hosting."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "The <a>innovative Dashboard</a>, couples with advanced features included in all plans without extra cost, consolidates and streamlines management for agencies, businesses, and individual site owners."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "With a dedicated support team of WordPress experts and DevOps engineers who work tirelessly 24x7x365, your site is in the best hands, allowing you to focus on your content and business goals."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Pressidium. Enjoy 14-days of superior WordPress hosting for free! Learn more."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Settings saved successfully."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not save settings."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not pass security check."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Background process paused successfully."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not pause background process."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Background process resumed successfully."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not resume background process."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Background process canceled successfully."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not cancel background process."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Your images are being optimized in the background. This process might take a while. Feel free to keep working as usual."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not optimize image(s)."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "You have unsaved changes. Are you sure you want to leave?"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Heads up! Your current setting will <strong>delete</strong> the original image files after optimization. That saves space, but that action <strong>cannot be undone</strong>. Make sure you have a backup just in case you need the original files later."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "This plugin performs best with page caching enabled. We recommend activating it via your hosting provider or a caching plugin."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Overview"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Image optimization"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Minification"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Concatenation"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Background processes"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Logs"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "About"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not export settings."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "No files selected"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Settings reset successfully."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Could not reset settings."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Need help?"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Browse our step-by-step documentation to set up, customize, and make the most of the plugin."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Read Documentation"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Enjoying the plugin?"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Share the love! Drop a positive review, keep us smiling and help others find their new favorite plugin!"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Leave a Review"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Shape the future"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Report issues, suggest improvements, or contribute code. Every bit of feedback helps us grow and improve."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Contribute on GitHub"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Built by Pressidium®"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Managed hosting for WordPress optimized for performance, security, and scalability."
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Go Further. Go Faster. Go EDGE ⚡"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Enjoy 14-days of superior hosting for free!"
+msgstr ""
+
+#: public/bundle.admin.js:95
+msgid "Start your Free Trial"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Please share which plugin"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Please describe the feature you need"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Please share the reason"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Provide any additional details"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "I no longer need the plugin"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "I found a better plugin"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "It’s missing a feature I need"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "I couldn’t get the plugin to work"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "It’s a temporary deactivation"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Other"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Send feedback & deactivate"
+msgstr ""
+
+#: public/bundle.feedback.js:1
+msgid "Skip & deactivate"
+msgstr ""

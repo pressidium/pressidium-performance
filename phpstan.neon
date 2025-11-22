@@ -1,0 +1,38 @@
+parameters:
+    # level can be any integer between 0 (easier) and 8 (harder)
+    level: 6
+    bootstrapFiles:
+        - ../wordpress-stubs/stubs.php
+    paths:
+        # Our project files live in this directory
+        - .
+    scanDirectories:
+        # Our project uses the (mounted) `wordpress/` directory that
+        # isn't part of our Composer dependencies, but we don't want
+        # to analyse it. That's why we use `scanDirectories`
+        - ../wordpress
+    excludePaths:
+        - ./bin/*
+        - ./node_modules/*
+        - ./src/fonts/*
+        - ./src/js/*
+        - ./src/scss/*
+        - ./src/ts/*
+        - ./tests/*
+        - ./types/*
+    ignoreErrors:
+        - '#Constant MINIMUM_WP_VERSION not found#'
+        - '#Constant MINIMUM_PHP_VERSION not found#'
+        - '#Constant Pressidium\\WP\\Performance\\VERSION not found#'
+        - '#Used constant Pressidium\\WP\\Performance\\VERSION not found#'
+        - '#Constant Pressidium\\WP\\Performance\\PLUGIN_DIR not found#'
+        - '#Used constant Pressidium\\WP\\Performance\\PLUGIN_DIR not found#'
+        - '#Constant Pressidium\\WP\\Performance\\PLUGIN_URL not found#'
+        - '#Used constant Pressidium\\WP\\Performance\\PLUGIN_URL not found#'
+        - '#Constant Pressidium\\WP\\Performance\\PLUGIN_FILE not found#'
+        - '#Used constant Pressidium\\WP\\Performance\\PLUGIN_FILE not found#'
+    fileExtensions:
+        # Scan all PHP files
+        - php
+    dynamicConstantNames:
+        - PRESSIDIUM_PLATFORM

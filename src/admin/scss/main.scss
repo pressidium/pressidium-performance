@@ -1,0 +1,233 @@
+#pressidium-performance-root {
+
+  .components-tab-panel {
+    &__tabs {
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: none;
+
+      overflow-x: auto;
+    }
+
+    &__tabs-item {
+      white-space: nowrap;
+    }
+
+    &__tabs-item:focus,
+    &__tabs-item.active-tab {
+      box-shadow: inset 0 0 0 var(--wp-admin-border-width-focus) transparent, inset 0 -1.5px 0 0 var(--wp-admin-theme-color);
+    }
+  }
+
+  .components-base-control:not(.components-range-control__number) {
+    width: 100%;
+  }
+
+  .components-range-control__wrapper {
+    margin: 16px 30px;
+  }
+
+  .components-range-control__mark-label {
+    margin-top: 8px;
+  }
+
+  .components-panel__row {
+    margin-top: 17px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .pressidium-tab-beta {
+    position: relative;
+    padding-right: 4rem;
+  }
+
+  .pressidium-tab-beta::after {
+    content: 'Beta';
+
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    left: auto;
+
+    width: 2.5rem;
+    height: 1rem;
+
+    background-color: #80c8ff;
+    color: #0b5595;
+
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1rem;
+    letter-spacing: 0;
+
+    border-radius: 9999px;
+
+    transform: translateY(-50%);
+  }
+
+  .pressidium-colors-panel {
+    width: 100%;
+    min-width: 240px;
+    max-width: 320px;
+
+    box-sizing: border-box;
+
+    .components-panel__body {
+      padding: 0;
+    }
+
+    .components-panel__body > .components-button {
+      width: 100%;
+      height: auto;
+      padding: 10px 12px;
+    }
+
+    .components-panel__body > .components-button {
+      width: 100%;
+      height: auto;
+      padding: 10px 12px;
+    }
+
+    .components-panel__body > .components-button > .components-flex {
+      line-height: 0.6rem;
+      justify-content: flex-start;
+    }
+
+    .components-flex-item:first-child {
+      min-width: 20px;
+    }
+
+    &__button-label {
+      color: #000;
+      display: inline-block;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 100%;
+      height: 1rem;
+      line-height: 1rem;
+    }
+  }
+
+  .pressidium-toggle-control label {
+    flex: 0 auto;
+  }
+
+  .pressidium-select-control,
+  .pressidium-text-control {
+    min-width: 240px;
+    max-width: 320px;
+  }
+
+  .pressidium-no-margin {
+    margin: 0;
+  }
+
+  .pressidium-horizontal-radio {
+    .components-v-stack {
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+  }
+
+  .pressidium-panel-no-arrow {
+    .components-panel {
+      &__body-title:hover {
+        background: transparent;
+      }
+
+      &__body-toggle {
+        pointer-events: none;
+        &:hover {
+          cursor: default;
+        }
+      }
+
+      &__arrow {
+        display: none;
+      }
+    }
+  }
+
+  .pressidium-no-margin {
+    margin: 0;
+  }
+
+  .components-notice {
+    margin: 0 0 12px 0;
+    padding-right: 12px;
+  }
+
+  .pressidium-badge {
+    display: inline-block;
+
+    padding: 0 1em;
+    line-height: 2.5em;
+    border-radius: 4px;
+
+    &--success {
+      background-color: #c6e1c6;
+      color: #5b841b;
+    }
+
+    &--error {
+      background-color: #eba3a3;
+      color: #761919;
+    }
+
+    &--warning {
+      background-color: #f8dda7;
+      color: #94660c;
+    }
+
+    &--info {
+      background-color: #c8d7e1;
+      color: #2e4453;
+    }
+  }
+
+}
+
+.pressidium-scrollable {
+  max-height: 220px;
+  padding: 4px;
+}
+
+.pressidium-fine-print {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 1.4em;
+}
+
+@media (max-width: 639px) {
+  .pressidium-hide-on-sm {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .pressidium-hide-on-md {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .pressidium-hide-on-lg {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1279px) {
+  .pressidium-hide-on-xl {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1535px) {
+  .pressidium-hide-on-2xl {
+    display: none !important;
+  }
+}

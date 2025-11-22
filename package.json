@@ -1,0 +1,51 @@
+{
+  "name": "pressidium-performance",
+  "version": "1.0.0",
+  "description": "Speed up your WordPress site, improve Core Web Vitals and enhance user experience with one-click image optimization, CSS & JavaScript minification.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "wp-scripts start",
+    "build": "wp-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pressidium/pressidium-performance.git"
+  },
+  "keywords": [
+    "performance",
+    "optimizations",
+    "image optimization",
+    "convert webp",
+    "convert avif"
+  ],
+  "author": "Konstantinos Pappas <konpap@pressidium.com>",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/pressidium/pressidium-performance/issues"
+  },
+  "homepage": "https://github.com/pressidium/pressidium-performance#readme",
+  "devDependencies": {
+    "@wordpress/eslint-plugin": "^22.5.0",
+    "@wordpress/scripts": "^30.12.0",
+    "eslint": "^8.44.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.31.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prop-types": "^15.8.1"
+  },
+  "dependencies": {
+    "@wordpress/api-fetch": "^7.19.0",
+    "@wordpress/components": "^29.5.0",
+    "@wordpress/element": "^6.19.0",
+    "@wordpress/i18n": "^5.19.0",
+    "@wordpress/icons": "^10.19.0",
+    "@wordpress/url": "^4.19.0",
+    "react-beforeunload": "^2.6.0",
+    "styled-components": "^6.1.15"
+  }
+}
