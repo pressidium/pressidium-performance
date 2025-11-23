@@ -6,6 +6,8 @@
 
 🚀 The Pressidium Performance plugin is designed to supercharge your site’s speed and enhance your visitors’ experience by reducing load times and improving your site’s performance scores. It optimizes JavaScript and CSS by minifying and merging files, and compresses images in your Media Library using modern formats like WebP and AVIF to accelerate media loading without sacrificing quality.
 
+![Performance plugin screenshot](./.wordpress-org/screenshot-1.png)
+
 ## Table of Contents
 
 * [Setup](#setup)
@@ -42,6 +44,8 @@
 
 ### 🪄 Optimize Your Images
 
+![Image optimization tab screenshot](./.wordpress-org/screenshot-3.png)
+
 Speed up your site by compressing Media Library images in the background.
 
 * Convert them to modern formats like **WebP or AVIF**
@@ -51,13 +55,19 @@ Speed up your site by compressing Media Library images in the background.
 
 ### ✂️ Minify Your Scripts and Stylesheets
 
+![Minification tab screenshot](./.wordpress-org/screenshot-5.png)
+
 Improve your site’s performance by **reducing the size of your JavaScript and CSS files**, ensuring faster load times.
 
 ### 🗃️ Concatenate JavaScript and CSS Files
 
+![Concatenation tab screenshot](./.wordpress-org/screenshot-6.png)
+
 Reduce HTTP requests and speed up loading across your entire site, by **combining multiple JavaScript and CSS files into a single bundle**.
 
 ### 🕒 Lightweight Smart Background Operations
+
+![Background processes tab screenshot](./.wordpress-org/screenshot-7.png)
 
 * **All processes run seamlessly in the background** to minimize site impact, conserve server resources and prevent performance bottlenecks or timeouts.
 * **Monitor** every optimization task running behind the scenes. **Pause, resume or cancel tasks** instantly.
