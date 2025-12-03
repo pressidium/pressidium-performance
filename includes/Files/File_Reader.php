@@ -72,25 +72,9 @@ final class File_Reader {
             return $response['body'];
         }
 
-        // Fallback to `file_get_contents()` if `wp_safe_remote_request()` fails
-        $this->logger->warning(
-            sprintf(
-                'Could not fetch file via `wp_safe_remote_request()` (%s). Fallback to `file_get_contents()`.',
-                esc_html( $response->get_error_message() )
-            )
+        throw new Filesystem_Exception(
+            sprintf( 'Could not retrieve file: %s', esc_html( $response->get_error_message() ) )
         );
-
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-        $contents = file_get_contents( $file_uri );
-
-        if ( $contents === false ) {
-            // Both `wp_remote_get()` and `file_get_contents()` failed
-            throw new Filesystem_Exception(
-                sprintf( 'Could not retrieve file: %s', esc_html( $response->get_error_message() ) )
-            );
-        }
-
-        return $contents;
     }
 
     /**
