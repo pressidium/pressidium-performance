@@ -40,6 +40,10 @@ Reduce HTTP requests and speed up loading across your entire site, by **combinin
 * **All processes run seamlessly in the background** to minimize site impact, conserve server resources and prevent performance bottlenecks or timeouts.
 * **Monitor** every optimization task running behind the scenes. **Pause, resume or cancel tasks** instantly.
 
+= Source code =
+
+The plugin source code and issue tracker are available on GitHub: https://github.com/pressidium/pressidium-performance
+
 = About Pressidium =
 
 This is a free and open source WordPress plugin developed by Pressidium®. Pressidium offers managed hosting for WordPress optimized for performance, security, and scalability, powered by Pressidium EDGE, a globally distributed platform engineered for nonstop performance, fault tolerance, and mission-critical reliability.
