@@ -11,6 +11,7 @@ namespace Pressidium\WP\Performance;
 use Pressidium\WP\Performance\Enumerations\HTML_Tag;
 use Pressidium\WP\Performance\Hooks\Actions;
 use Pressidium\WP\Performance\Logging\Logger;
+use Pressidium\WP\Performance\Utils\WP_Utils;
 
 use Pressidium\WP\Performance\Enumerations\HTML_Bookmark;
 
