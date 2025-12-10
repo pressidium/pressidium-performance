@@ -40,6 +40,15 @@ final class WP_Utils {
     }
 
     /**
+     * Return the request URI of the current request.
+     *
+     * @return string
+     */
+    public static function get_request_uri(): string {
+        return esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+    }
+
+    /**
      * Return the environment type of this WordPress website.
      *
      * @since 1.0.0

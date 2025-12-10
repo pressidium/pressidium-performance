@@ -224,7 +224,7 @@ final class Processor_Manager implements Actions {
      * @return bool
      */
     private function is_asset(): bool {
-        $request_uri = $_SERVER['REQUEST_URI'];
+        $request_uri = WP_Utils::get_request_uri();
 
         // Regular expression to match a file extension at the end of the URI
         return preg_match( '/\.\w+$/', $request_uri ) === 1;
