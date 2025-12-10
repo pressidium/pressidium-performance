@@ -212,7 +212,7 @@ final class WP_Utils {
      * @return string
      */
     public static function get_unique_page_hash(): string {
-        $path = trailingslashit( wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
+        $path = trailingslashit( wp_parse_url( self::get_request_uri(), PHP_URL_PATH ) );
         return md5( $path );
     }
 
