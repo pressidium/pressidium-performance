@@ -40,12 +40,12 @@ final class Minify_Process extends Background_Process {
     /**
      * @var string The unique prefix to use for the queue.
      */
-    protected $prefix = 'pressidium_performance';
+    protected string $prefix = 'pressidium_performance';
 
     /**
      * @var string The action to perform.
      */
-    protected $action = 'minify_js_process';
+    protected string $action = 'minify_js_process';
 
     /**
      * Minify_Process constructor.

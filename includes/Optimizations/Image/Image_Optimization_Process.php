@@ -28,12 +28,12 @@ class Image_Optimization_Process extends Background_Process {
     /**
      * @var string The unique prefix to use for the queue.
      */
-    protected $prefix = 'pressidium_performance';
+    protected string $prefix = 'pressidium_performance';
 
     /**
      * @var string The action to perform.
      */
-    protected $action = 'optimize_images';
+    protected string $action = 'optimize_images';
 
     /**
      * Image_Optimization_Process constructor.
