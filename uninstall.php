@@ -87,7 +87,7 @@ function pressidium_performance_uninstall(): void {
 
     if ( ! empty( $attachments ) ) {
         // Include the `Posts_Updater` class
-        require_once ( plugin_dir_path( __FILE__ ) . 'includes/Optimizations/Image/Posts_Updater.php' );
+        require_once plugin_dir_path( __FILE__ ) . 'includes/Optimizations/Image/Posts_Updater.php';
 
         $posts_updater = new \Pressidium\WP\Performance\Optimizations\Image\Posts_Updater();
 
