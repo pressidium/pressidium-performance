@@ -144,6 +144,36 @@ abstract class WP_Async_Request {
     }
 
     /**
+     * Return cookies to ensure the request is performed as the initiating user.
+     *
+     * @return array<string, string>
+     */
+    protected function get_cookies(): array {
+        $cookie_hash = defined( 'COOKIEHASH' ) ? COOKIEHASH : md5( get_site_url() );
+
+        $allowed_cookie_keys = array(
+            defined( 'LOGGED_IN_COOKIE' ) ? LOGGED_IN_COOKIE : 'wordpress_logged_in_' . $cookie_hash,
+            defined( 'SECURE_AUTH_COOKIE' ) ? SECURE_AUTH_COOKIE : 'wordpress_sec_' . $cookie_hash,
+            defined( 'AUTH_COOKIE' ) ? AUTH_COOKIE : 'wordpress_' . $cookie_hash,
+            defined( 'TEST_COOKIE' ) ? TEST_COOKIE : 'wp-test-cookie',
+            'wp-settings-' . get_current_user_id(),
+            'wp-settings-time-' . get_current_user_id(),
+        );
+
+        $allowed_cookie_keys = apply_filters( $this->identifier . '_allowed_cookies', $allowed_cookie_keys );
+
+        $cookies = array();
+
+        foreach ( $allowed_cookie_keys as $cookie_key ) {
+            if ( isset( $_COOKIE[ $cookie_key ] ) ) {
+                $cookies[ $cookie_key ] = sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_key ] ) );
+            }
+        }
+
+        return $cookies;
+    }
+
+    /**
      * Return post args.
      *
      * @return array<string, mixed>
@@ -157,10 +187,9 @@ abstract class WP_Async_Request {
             'timeout'   => 5,
             'blocking'  => false,
             'body'      => $this->data,
-            // Passing cookies ensures request is performed as initiating user
-            'cookies'   => $_COOKIE,
+            'cookies'   => $this->get_cookies(),
             // Local requests, fine to pass `false`
-            'sslverify' => apply_filters( 'pressidium_performance_https_local_ssl_verify', false ),
+            'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
         );
 
         /**
