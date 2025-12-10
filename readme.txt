@@ -3,7 +3,7 @@ Author URI: https://pressidium.com/
 Plugin URI: https://pressidium.com/open-source/performance-plugin/
 Contributors: pressidium, overengineer
 Tags: performance, optimizations, image optimization, convert webp, convert avif
-Requires at least: 6.7
+Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.1
 Stable Tag: 1.0.0
