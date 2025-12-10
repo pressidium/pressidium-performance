@@ -10,6 +10,7 @@ namespace Pressidium\WP\Performance;
 
 use Pressidium\WP\Performance\Enumerations\HTML_Tag;
 use Pressidium\WP\Performance\Hooks\Actions;
+use Pressidium\WP\Performance\Hooks\Filters;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Utils\WP_Utils;
 
@@ -24,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-final class Processor_Manager implements Actions {
+final class Processor_Manager implements Actions, Filters {
 
     /**
      * @var Processor[] Processor instances.
@@ -261,37 +262,29 @@ final class Processor_Manager implements Actions {
     }
 
     /**
-     * Turn output buffering on.
-     *
-     * While output buffering is active, no output is sent from the script
-     * (other than headers), instead the output is stored in an internal
-     * buffer. If output buffering is still active when the script ends,
-     * PHP outputs the contents automatically.
-     *
-     * @link https://www.php.net/manual/en/book.outcontrol.php
-     * @link https://www.php.net/manual/en/function.ob-start.php
-     *
-     * @return void
-     */
-    public function turn_output_buffering_on(): void {
-        if ( ! $this->should_process_output() ) {
-            // Output should not be processed, bail early
-            return;
-        }
-
-        ob_start( array( $this, 'process' ) );
-    }
-
-    /**
      * Return the actions to register.
      *
      * @return array<string, array{0: string, 1?: int, 2?: int}>
      */
     public function get_actions(): array {
         return array(
-            'init'    => array( 'turn_output_buffering_on' ),
             'wp_head' => array( 'output_script_slots', -1 ),
         );
+    }
+
+    /**
+     * Return the filters to register.
+     *
+     * @return array<string, array{0: string, 1?: int, 2?: int}>
+     */
+    public function get_filters(): array {
+        $filters = array();
+
+        if ( $this->should_process_output() ) {
+            $filters['wp_template_enhancement_output_buffer'] = array( 'process' );
+        }
+
+        return $filters;
     }
 
 }
