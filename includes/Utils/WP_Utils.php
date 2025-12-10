@@ -33,7 +33,7 @@ final class WP_Utils {
         $domain = wp_parse_url( get_site_url(), PHP_URL_HOST );
 
         if ( ! $domain ) {
-            return $_SERVER['HTTP_HOST'];
+            return wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['HTTP_HOST'] ) ), PHP_URL_HOST );
         }
 
         return $domain;
