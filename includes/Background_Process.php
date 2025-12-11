@@ -8,7 +8,7 @@
 
 namespace Pressidium\WP\Performance;
 
-use Pressidium_Performance_WP_Background_Process;
+use Pressidium\WP\Performance\Background_Processing\WP_Background_Process;
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Forbidden' );
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-abstract class Background_Process extends Pressidium_Performance_WP_Background_Process {
+abstract class Background_Process extends WP_Background_Process {
 
     /**
      * Return the items to process.

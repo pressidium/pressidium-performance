@@ -33,10 +33,19 @@ final class WP_Utils {
         $domain = wp_parse_url( get_site_url(), PHP_URL_HOST );
 
         if ( ! $domain ) {
-            return $_SERVER['HTTP_HOST'];
+            return wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['HTTP_HOST'] ) ), PHP_URL_HOST );
         }
 
         return $domain;
+    }
+
+    /**
+     * Return the request URI of the current request.
+     *
+     * @return string
+     */
+    public static function get_request_uri(): string {
+        return esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
     }
 
     /**
@@ -203,7 +212,7 @@ final class WP_Utils {
      * @return string
      */
     public static function get_unique_page_hash(): string {
-        $path = trailingslashit( wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
+        $path = trailingslashit( wp_parse_url( self::get_request_uri(), PHP_URL_PATH ) );
         return md5( $path );
     }
 

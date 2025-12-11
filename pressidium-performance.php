@@ -43,7 +43,7 @@ function setup_constants(): void {
     }
 
     if ( ! defined( 'Pressidium\WP\Performance\MINIMUM_WP_VERSION' ) ) {
-        define( 'Pressidium\WP\Performance\MINIMUM_WP_VERSION', '6.7' );
+        define( 'Pressidium\WP\Performance\MINIMUM_WP_VERSION', '6.9' );
     }
 
     if ( ! defined( 'Pressidium\WP\Performance\MINIMUM_PHP_VERSION' ) ) {

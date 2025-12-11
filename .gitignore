@@ -359,6 +359,6 @@ dist
 /public/**/*
 !/public/.gitkeep
 includes/classes/dependencies/**/*
-!includes/classes/dependencies/.gitkeep
+!includes/classes/dependencies/index.php
 includes/Dependencies/**/*
-!includes/Dependencies/.gitkeep
+!includes/Dependencies/index.php

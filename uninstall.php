@@ -23,6 +23,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
  * @return void
  */
 function pressidium_performance_rm_dir( string $directory ): void {
+    global $wp_filesystem;
+
     if ( ! is_dir( $directory ) ) {
         return;
     }
@@ -34,12 +36,13 @@ function pressidium_performance_rm_dir( string $directory ): void {
 
         if ( is_dir( $file_path ) ) {
             pressidium_performance_rm_dir( $file_path );
-        } else {
-            unlink( $file_path );
+            continue;
         }
+
+        wp_delete_file( $file_path );
     }
 
-    rmdir( $directory );
+    $wp_filesystem->delete( $directory );
 }
 
 /**
@@ -84,7 +87,7 @@ function pressidium_performance_uninstall(): void {
 
     if ( ! empty( $attachments ) ) {
         // Include the `Posts_Updater` class
-        require_once ( plugin_dir_path( __FILE__ ) . 'includes/Optimizations/Image/Posts_Updater.php' );
+        require_once plugin_dir_path( __FILE__ ) . 'includes/Optimizations/Image/Posts_Updater.php';
 
         $posts_updater = new \Pressidium\WP\Performance\Optimizations\Image\Posts_Updater();
 
@@ -106,7 +109,7 @@ function pressidium_performance_uninstall(): void {
             $optimized_image_path = $upload_dir . $metadata['file'];
 
             if ( is_file( $optimized_image_path ) ) {
-                unlink( $optimized_image_path);
+                wp_delete_file( $optimized_image_path );
             }
 
             // Keep the directory containing the optimized image files for the currently iterated attachment
@@ -120,7 +123,7 @@ function pressidium_performance_uninstall(): void {
                 $optimized_image_path = $image_dir . DIRECTORY_SEPARATOR . $metadata['sizes'][ $size ]['file'];
 
                 if ( is_file( $optimized_image_path ) ) {
-                    unlink( $optimized_image_path );
+                    wp_delete_file( $optimized_image_path );
                 }
             }
 

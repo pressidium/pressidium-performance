@@ -39,12 +39,12 @@ final class Concatenate_Process extends Background_Process {
     /**
      * @var string The unique prefix to use for the queue.
      */
-    protected $prefix = 'pressidium_performance';
+    protected string $prefix = 'pressidium_performance';
 
     /**
      * @var string The action to perform.
      */
-    protected $action = 'concatenate_css_process';
+    protected string $action = 'concatenate_css_process';
 
     /**
      * Concatenate_Process constructor.

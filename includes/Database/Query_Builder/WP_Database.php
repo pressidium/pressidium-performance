@@ -17,6 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WP_Database class.
  *
+ * This is an object-oriented wrapper around the WordPress wpdb class,
+ * implementing the Database interface for database operations.
+ *
+ * It does not add any additional logic but provides a clean abstraction layer.
+ * Any SQL injection prevention or data sanitization should be handled
+ * before passing data to this class.
+ *
  * @since 1.0.0
  */
 class WP_Database implements Database {
