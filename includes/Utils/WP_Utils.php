@@ -49,6 +49,22 @@ final class WP_Utils {
     }
 
     /**
+     * Return the protocol of this WordPress website.
+     *
+     * @return string
+     */
+    public static function get_site_protocol(): string {
+        $parsed_url = wp_parse_url( get_home_url() );
+        $scheme     = $parsed_url['scheme'] ?? 'https';
+
+        if ( $scheme === 'http' ) {
+            return 'http';
+        }
+
+        return 'https';
+    }
+
+    /**
      * Return the environment type of this WordPress website.
      *
      * @since 1.0.0

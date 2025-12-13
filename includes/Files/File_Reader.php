@@ -50,6 +50,20 @@ final class File_Reader {
     }
 
     /**
+     * Determine if the given URL is protocol-relative.
+     *
+     * Protocol-relative URLs start with '//' and inherit
+     * the protocol (http or https) from the current context.
+     *
+     * @param string $url URL to check.
+     *
+     * @return bool `true` if the URL is protocol-relative, `false` otherwise.
+     */
+    private function is_protocol_relative_url( string $url ): bool {
+        return str_starts_with( $url, '//' );
+    }
+
+    /**
      * Fetch and return the contents of the file at the given URI.
      *
      * @throws Filesystem_Exception If the file could not be retrieved.
@@ -59,6 +73,11 @@ final class File_Reader {
      * @return string Contents of the file.
      */
     private function maybe_fetch_remote( string $file_uri ): string {
+        if ( $this->is_protocol_relative_url( $file_uri ) ) {
+            $protocol = WP_Utils::get_site_protocol();
+            $file_uri = sprintf( '%s:%s', $protocol, $file_uri );
+        }
+
         $response = wp_safe_remote_request(
             $file_uri,
             array(
