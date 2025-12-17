@@ -27,6 +27,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class File_Reader {
 
     /**
+     * @var string User agent for remote requests.
+     */
+    const USER_AGENT = 'Pressidium Performance Plugin';
+
+    /**
      * File_Reader constructor.
      *
      * @param Logger     $logger
@@ -80,7 +85,7 @@ final class File_Reader {
             $file_uri,
             array(
                 'timeout'    => 10, // seconds
-                'user-agent' => sprintf( 'Pressidium Performance Plugin/%s', VERSION ),
+                'user-agent' => sprintf( '%s/%s', self::USER_AGENT, VERSION ),
                 'sslverify'  => ! WP_Utils::is_local_or_development_env(), // do not verify SSL in local/dev env
             ),
         );
