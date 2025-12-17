@@ -11,6 +11,7 @@ namespace Pressidium\WP\Performance\Files;
 use Pressidium\WP\Performance\Exceptions\Filesystem_Exception;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Utils\WP_Utils;
+use Pressidium\WP\Performance\Utils\URL_Utils;
 
 use const Pressidium\WP\Performance\VERSION;
 
@@ -73,10 +74,7 @@ final class File_Reader {
      * @return string Contents of the file.
      */
     private function maybe_fetch_remote( string $file_uri ): string {
-        if ( $this->is_protocol_relative_url( $file_uri ) ) {
-            $protocol = WP_Utils::get_site_protocol();
-            $file_uri = sprintf( '%s:%s', $protocol, $file_uri );
-        }
+        $file_uri = URL_Utils::normalize_url( $file_uri );
 
         $response = wp_safe_remote_request(
             $file_uri,
