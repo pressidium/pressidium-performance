@@ -49,7 +49,7 @@ final class Sanitizer {
      * @return string
      */
     public static function sanitize_url( $url ): string {
-        return sanitize_url( $url );
+        return esc_url_raw( $url );
     }
 
     /**

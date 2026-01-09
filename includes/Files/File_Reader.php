@@ -11,6 +11,7 @@ namespace Pressidium\WP\Performance\Files;
 use Pressidium\WP\Performance\Exceptions\Filesystem_Exception;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Utils\WP_Utils;
+use Pressidium\WP\Performance\Utils\URL_Utils;
 
 use const Pressidium\WP\Performance\VERSION;
 
@@ -24,6 +25,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 final class File_Reader {
+
+    /**
+     * @var string User agent for remote requests.
+     */
+    const USER_AGENT = 'Pressidium Performance Plugin';
 
     /**
      * File_Reader constructor.
@@ -50,6 +56,20 @@ final class File_Reader {
     }
 
     /**
+     * Determine if the given URL is protocol-relative.
+     *
+     * Protocol-relative URLs start with '//' and inherit
+     * the protocol (http or https) from the current context.
+     *
+     * @param string $url URL to check.
+     *
+     * @return bool `true` if the URL is protocol-relative, `false` otherwise.
+     */
+    private function is_protocol_relative_url( string $url ): bool {
+        return str_starts_with( $url, '//' );
+    }
+
+    /**
      * Fetch and return the contents of the file at the given URI.
      *
      * @throws Filesystem_Exception If the file could not be retrieved.
@@ -59,11 +79,13 @@ final class File_Reader {
      * @return string Contents of the file.
      */
     private function maybe_fetch_remote( string $file_uri ): string {
+        $file_uri = URL_Utils::normalize_url( $file_uri );
+
         $response = wp_safe_remote_request(
             $file_uri,
             array(
                 'timeout'    => 10, // seconds
-                'user-agent' => sprintf( 'Pressidium Performance Plugin/%s', VERSION ),
+                'user-agent' => sprintf( '%s/%s', self::USER_AGENT, VERSION ),
                 'sslverify'  => ! WP_Utils::is_local_or_development_env(), // do not verify SSL in local/dev env
             ),
         );

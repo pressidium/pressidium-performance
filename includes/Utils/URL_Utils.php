@@ -20,6 +20,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class URL_Utils {
 
     /**
+     * Normalize the given URL.
+     *
+     * @param string $url URL to normalize.
+     *
+     * @return string
+     */
+    public static function normalize_url( string $url ): string {
+        // Handle protocol-relative URLs
+        $is_protocol_relative = str_starts_with( $url, '//' );
+
+        if ( $is_protocol_relative ) {
+            $protocol = WP_Utils::get_site_protocol();
+            $url      = $protocol . ':' . $url;
+        }
+
+        return $url;
+    }
+
+    /**
      * Whether the given value is a valid URL.
      *
      * @param string $value
@@ -27,7 +46,9 @@ final class URL_Utils {
      * @return bool
      */
     public static function is_url( string $value ): bool {
-        return (bool) filter_var( $value, FILTER_VALIDATE_URL );
+        $normalized_value = self::normalize_url( $value );
+
+        return (bool) filter_var( $normalized_value, FILTER_VALIDATE_URL );
     }
 
     /**

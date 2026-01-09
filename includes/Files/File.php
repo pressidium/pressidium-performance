@@ -9,8 +9,8 @@
 namespace Pressidium\WP\Performance\Files;
 
 use Pressidium\WP\Performance\Logging\Logger;
-use Pressidium\WP\Performance\Utils\URL_Utils;
 use Pressidium\WP\Performance\Utils\WP_Utils;
+use Pressidium\WP\Performance\Utils\URL_Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Forbidden' );
@@ -153,6 +153,10 @@ final class File {
                     ),
                 )
             );
+
+            if ( URL_Utils::is_url( $location ) ) {
+                $location = URL_Utils::normalize_url( $location );
+            }
 
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
             $contents = file_get_contents( $location );
