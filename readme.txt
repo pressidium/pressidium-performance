@@ -157,6 +157,6 @@ If you have spotted any bugs, or would like to request additional features from 
 
 == Changelog ==
 
-= 1.0.0: Nov 22, 2025 =
+= 1.0.0: Jan 9, 2026 =
 
 * Initial version
