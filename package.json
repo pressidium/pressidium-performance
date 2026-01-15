@@ -1,6 +1,6 @@
 {
   "name": "pressidium-performance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Speed up your WordPress site, improve Core Web Vitals and enhance user experience with one-click image optimization, CSS & JavaScript minification.",
   "main": "src/index.js",
   "scripts": {

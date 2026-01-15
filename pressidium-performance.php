@@ -3,7 +3,7 @@
  * Plugin Name: Pressidium Performance
  * Plugin URI: https://pressidium.com/open-source/performance-plugin/
  * Description: Speed up your WordPress site, improve Core Web Vitals and enhance user experience with one-click image optimization, CSS & JavaScript minification.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Pressidium®
  * Author URI: https://pressidium.com/
  * Text Domain: pressidium-performance
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function setup_constants(): void {
     if ( ! defined( 'Pressidium\WP\Performance\VERSION' ) ) {
-        define( 'Pressidium\WP\Performance\VERSION', '1.0.0' );
+        define( 'Pressidium\WP\Performance\VERSION', '1.0.1' );
     }
 
     if ( ! defined( 'Pressidium\WP\Performance\PLUGIN_DIR' ) ) {
