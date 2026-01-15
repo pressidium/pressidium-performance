@@ -116,6 +116,56 @@ class Webp_Converter implements Converter {
     }
 
     /**
+     * Return a unique filename suffix to avoid overwriting existing files.
+     *
+     * @throws Image_Conversion_Exception If a unique filename could not be generated after multiple attempts.
+     *
+     * @param string $dir_name  Directory name.
+     * @param string $filename  Filename without extension.
+     * @param string $extension File extension.
+     *
+     * @return string
+     */
+    private function get_unique_suffix( string $dir_name, string $filename, string $extension ): string {
+        $base_suffix = 'optimized';
+        $suffix      = $base_suffix;
+
+        // Initial destination path
+        $destination_path = sprintf(
+            '%s/%s%s.%s',
+            $dir_name,
+            $filename,
+            $suffix,
+            $extension
+        );
+
+        $max_attempts = 5;
+        $counter      = 1;
+
+        while ( file_exists( $destination_path ) ) {
+            $suffix = sprintf( '%s_%d', $base_suffix, $counter );
+
+            $destination_path = sprintf(
+                '%s/%s%s.%s',
+                $dir_name,
+                $filename,
+                $suffix,
+                $extension
+            );
+
+            ++$counter;
+
+            if ( $counter > $max_attempts ) {
+                throw new Image_Conversion_Exception(
+                    'Could not generate a unique filename for the converted image.'
+                );
+            }
+        }
+
+        return $suffix;
+    }
+
+    /**
      * Convert the specified image.
      *
      * @throws Image_Conversion_Exception If no image is loaded.
@@ -128,17 +178,25 @@ class Webp_Converter implements Converter {
             throw new Image_Conversion_Exception( 'Image is not loaded' );
         }
 
-        $destination_url = sprintf(
-            '%s.%s',
-            preg_replace( '/\.[^.]+$/', '', $this->image->get_url() ),
+        $path_info = pathinfo( $this->image->get_path() );
+        $suffix    = $this->get_unique_suffix(
+            $path_info['dirname'],
+            $path_info['filename'],
             self::EXTENSION
         );
 
-        $path_info        = pathinfo( $this->image->get_path() );
         $destination_path = sprintf(
-            '%s/%s.%s',
+            '%s/%s%s.%s',
             $path_info['dirname'],
             $path_info['filename'],
+            $suffix,
+            self::EXTENSION
+        );
+
+        $destination_url = sprintf(
+            '%s%s.%s',
+            preg_replace( '/\.[^.]+$/', '', $this->image->get_url() ),
+            $suffix,
             self::EXTENSION
         );
 
