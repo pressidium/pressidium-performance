@@ -186,7 +186,7 @@ class Webp_Converter implements Converter {
         );
 
         $destination_path = sprintf(
-            '%s/%s%s.%s',
+            '%s/%s_%s.%s',
             $path_info['dirname'],
             $path_info['filename'],
             $suffix,
@@ -194,7 +194,7 @@ class Webp_Converter implements Converter {
         );
 
         $destination_url = sprintf(
-            '%s%s.%s',
+            '%s_%s.%s',
             preg_replace( '/\.[^.]+$/', '', $this->image->get_url() ),
             $suffix,
             self::EXTENSION
