@@ -32,6 +32,7 @@ final class Service_Provider extends AbstractServiceProvider {
     protected $provides = array(
         'media_library',
         'image_optimization_manager',
+        'original_files_deletion_manager',
     );
 
     /**
@@ -57,6 +58,10 @@ final class Service_Provider extends AbstractServiceProvider {
              ->addArgument( $this->getContainer()->get( 'converter_manager' ) )
              ->addArgument( new Image_Metadata_Manager() )
              ->addArgument( new Posts_Updater() );
+
+        $this->getContainer()->add( 'original_files_deletion_manager', Original_Files_Deletion_Manager::class )
+             ->addArgument( $this->getContainer()->get( 'logger' ) )
+             ->addArgument( $this->getContainer()->get( 'filesystem' ) );
     }
 
 }
