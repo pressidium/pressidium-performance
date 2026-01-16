@@ -157,9 +157,11 @@ If you have spotted any bugs, or would like to request additional features from 
 
 == Changelog ==
 
-= 1.0.1: Jan 15, 2026 =
+= 1.0.1: Jan 16, 2026 =
 
 * Fix an issue where original images were overwritten when the source and target formats were the same
+* Fix an issue where original images remained on the filesystem as orphaned files when optimized images were deleted from the Media Library
+* Fix an issue where optimizing images resulted in double slashes in `srcset` attributes
 
 = 1.0.0: Jan 9, 2026 =
 
