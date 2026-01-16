@@ -110,6 +110,7 @@ final class Plugin {
             $hooks_manager->register( $container->get( 'background_processes_api' ) );
             $hooks_manager->register( $container->get( 'optimization_api' ) );
             $hooks_manager->register( $container->get( 'image_optimization_manager' ) );
+            $hooks_manager->register( $container->get( 'original_files_deletion_manager' ) );
             $hooks_manager->register( $container->get( 'feedback' ) );
 
         } catch ( ContainerExceptionInterface | NotFoundExceptionInterface $exception ) {

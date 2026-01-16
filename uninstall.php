@@ -106,7 +106,7 @@ function pressidium_performance_uninstall(): void {
             $posts_updater->revert_posts( $metadata['file'], $original_metadata['file'] );
 
             // Delete the optimized image file from the filesystem
-            $optimized_image_path = $upload_dir . $metadata['file'];
+            $optimized_image_path = $upload_dir . DIRECTORY_SEPARATOR . $metadata['file'];
 
             if ( is_file( $optimized_image_path ) ) {
                 wp_delete_file( $optimized_image_path );
