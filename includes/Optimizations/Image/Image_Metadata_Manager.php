@@ -8,6 +8,8 @@
 
 namespace Pressidium\WP\Performance\Optimizations\Image;
 
+use Pressidium\WP\Performance\Utils\String_Utils;
+
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Forbidden' );
 }
@@ -64,7 +66,7 @@ class Image_Metadata_Manager {
         $relative_path = $this->ensure_path_is_relative( $optimized_image->get_path() );
 
         if ( $size_variant_name === 'full' ) {
-            $metadata['file']         = $relative_path;
+            $metadata['file']         = String_Utils::unleading_slash_it( $relative_path );
             $metadata['filesize']     = filesize( $optimized_image->get_path() );
             $metadata['mime-type']    = $optimized_image->get_mime_type();
             $metadata['is_optimized'] = true;
