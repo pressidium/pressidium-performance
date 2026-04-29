@@ -198,6 +198,59 @@ final class Filesystem {
     }
 
     /**
+     * Read the last N lines of a file using a stream-based approach.
+     *
+     * Opens the file and reads backwards from the end in chunks,
+     * so the entire file is never loaded into memory at once.
+     *
+     * @throws Filesystem_Exception If the file could not be opened.
+     *
+     * @param string $file_path  Path to the file to read.
+     * @param int    $lines      Number of lines to read from the end.
+     * @param int    $chunk_size Size of each read chunk in bytes.
+     *
+     * @return string The last N lines of the file.
+     */
+    public function read_last_lines( string $file_path, int $lines, int $chunk_size = 4096 ): string {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+        $handle = fopen( $file_path, 'r' );
+
+        if ( $handle === false ) {
+            throw new Filesystem_Exception( 'Failed to open file at path: ' . esc_html( $file_path ) );
+        }
+
+        fseek( $handle, 0, SEEK_END );
+
+        $pos        = ftell( $handle );
+        $buffer     = '';
+        $line_count = 0;
+
+        while ( $pos > 0 && $line_count <= $lines ) {
+            $read_size = min( $chunk_size, $pos );
+            $pos      -= $read_size;
+
+            fseek( $handle, $pos, SEEK_SET );
+
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+            $chunk = fread( $handle, $read_size );
+
+            $buffer      = $chunk . $buffer;
+            $line_count += substr_count( $chunk, "\n" );
+        }
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        fclose( $handle );
+
+        // We may have read more lines than needed, so trim from the top
+        $all_lines = explode( "\n", $buffer );
+
+        // Take only the last $lines lines (ignoring a potential trailing empty element)
+        $last_lines = array_slice( $all_lines, -$lines );
+
+        return implode( "\n", $last_lines );
+    }
+
+    /**
      * Whether the file or directory at the given path exists.
      *
      * @param string $path Path to the file or directory to check.

@@ -72,13 +72,16 @@ class Logs {
     /**
      * Return the logs.
      *
+     * @param int $max_lines Maximum number of lines to return from the end of the log.
+     *                       A value of 0 means return all lines.
+     *
      * @return string
      */
-    public function get_logs(): string {
+    public function get_logs( int $max_lines = 0 ): string {
         $logs = '';
 
         try {
-            $logs = $this->logger->get_logs();
+            $logs = $this->logger->get_logs( $max_lines );
         } catch ( RuntimeException $exception ) {
             $this->logger->log_exception( $exception );
         }

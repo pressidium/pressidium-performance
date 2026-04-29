@@ -281,11 +281,18 @@ final class File_Logger implements Logger {
     /**
      * Read the log file and return its contents.
      *
+     * When `$max_lines` is greater than 0, only the last N lines are
+     * read using a stream-based approach so the entire file is never
+     * loaded into memory.
+     *
      * @throws RuntimeException If the log file could not be read.
+     *
+     * @param int $max_lines Maximum number of lines to return from the end of the log.
+     *                       A value of 0 means return the entire file.
      *
      * @return string
      */
-    public function get_logs(): string {
+    public function get_logs( int $max_lines = 0 ): string {
         $source = $this->get_logs_path();
 
         if ( ! $this->filesystem->exists( $source ) ) {
@@ -294,7 +301,11 @@ final class File_Logger implements Logger {
         }
 
         try {
-            $logs = $this->filesystem->read( $source );
+            if ( $max_lines > 0 ) {
+                $logs = $this->filesystem->read_last_lines( $source, $max_lines );
+            } else {
+                $logs = $this->filesystem->read( $source );
+            }
         } catch ( Filesystem_Exception $exception ) {
             throw new RuntimeException( esc_html( $exception->getMessage() ) );
         }

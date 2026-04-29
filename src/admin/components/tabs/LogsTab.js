@@ -51,7 +51,7 @@ function LogsTab() {
     const { logs_route: route, nonce } = pressidiumPerfAdminDetails.api;
 
     const options = {
-      path: `${route}?nonce=${nonce}`,
+      path: `${route}?nonce=${nonce}&lines=100`,
       method: 'GET',
     };
 

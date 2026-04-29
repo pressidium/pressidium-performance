@@ -210,9 +210,11 @@ class Console_Logger implements Logger {
     /**
      * Return an empty string since console logs are not stored in a file.
      *
+     * @param int $max_lines Maximum number of lines to return (unused).
+     *
      * @return string
      */
-    public function get_logs(): string {
+    public function get_logs( int $max_lines = 0 ): string {
         return '';
     }
 
