@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Image_Revert_Process class.
  *
- * @since 1.0.2
+ * @since 1.1.0
  */
 class Image_Revert_Process extends Background_Process {
 
