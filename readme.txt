@@ -121,9 +121,13 @@ Yes. You can exclude specific images from being optimized by adding their paths 
 
 You can pick between lossless (no quality loss) or lossy (smaller files with some compression) optimization for your images. Just open the “Image optimization” tab and set your preferred quality level. Remember: Lower quality means smaller file size, higher quality means sharper images.
 
+= Can I revert my optimized images back to the originals? =
+
+Yes, as long as the "Keep original files" option was enabled under the "Image optimization" tab when the images were optimized. Navigate to **wp-admin → Performance → Image optimization** and click the **"Revert optimized images"** button. The plugin will restore the original files and metadata in the background. Please note that if the original files were not retained, the revert process will skip those images since there is nothing to restore.
+
 = Can I undo the changes made by the plugin? =
 
-Yes. When you uninstall the plugin, all changes it made will be automatically reverted. To ensure your original images are restored, make sure the “Keep original files” option is enabled under the “Image optimization” tab.
+Yes. Minification and concatenation changes are automatically reverted when you uninstall the plugin. However, optimized images will **not** be reverted automatically upon uninstall, they will remain as-is. If you wish to restore your original images before removing the plugin, navigate to **wp-admin → Performance → Image optimization** and click the **"Revert optimized images"** button. This will restore the original files and metadata in the background. Make sure the "Keep original files" option was enabled under the "Image optimization" tab, otherwise the original files will no longer be available to revert to.
 
 = Can I export/import the plugin settings? =
 
