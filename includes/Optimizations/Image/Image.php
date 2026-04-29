@@ -229,7 +229,9 @@ class Image {
         $image_type = exif_imagetype( $this->path );
 
         if ( $image_type === false ) {
-            throw new Image_Conversion_Exception( 'Could not determine image type' );
+            throw new Image_Conversion_Exception(
+                sprintf( 'Could not determine image type (%s)', esc_html( $this->path ) )
+            );
         }
 
         $this->image_type = $image_type;

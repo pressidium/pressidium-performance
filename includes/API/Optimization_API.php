@@ -153,24 +153,19 @@ final class Optimization_API extends API {
             );
         }
 
-        $image_attachments = $this->media_library->get_all();
+        $attachment_ids = $this->media_library->get_all_image_attachment_ids();
 
-        if ( empty( $image_attachments ) ) {
+        if ( empty( $attachment_ids ) ) {
             return new WP_Error(
                 'no_images_found',
                 __( 'No images found in the media library', 'pressidium-performance' )
             );
         }
 
-        foreach ( $image_attachments as $image_attachment ) {
-            $attachment_id = $image_attachment->get_attachment_id();
-            $this->logger->debug( "Scheduling image attachment for optimization: {$attachment_id}" );
-
-            $this->image_optimization_manager->push_to_queue( $image_attachment );
-        }
-
-        $this->logger->debug( 'Starting to optimize images in the background' );
-        $this->image_optimization_manager->process_queue();
+        $this->logger->debug(
+            sprintf( 'Enqueueing %d image attachments for optimization in the background', count( $attachment_ids ) )
+        );
+        $this->image_optimization_manager->enqueue_all( $attachment_ids );
 
         return new WP_REST_Response( array( 'success' => true ) );
     }
