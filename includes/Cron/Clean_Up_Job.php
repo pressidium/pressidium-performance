@@ -14,6 +14,8 @@ use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Files\Filesystem;
 use Pressidium\WP\Performance\Database\Tables\Concatenations_Pages_Table;
 use Pressidium\WP\Performance\Database\Tables\Concatenations_Table;
+use Pressidium\WP\Performance\Database\Tables\Optimizations_Table;
+use Pressidium\WP\Performance\Utils\URL_Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Forbidden' );
@@ -33,12 +35,14 @@ final class Clean_Up_Job implements Cron_Job {
      * @param Filesystem                 $filesystem
      * @param Concatenations_Pages_Table $concatenations_pages_table
      * @param Concatenations_Table       $concatenations_table
+     * @param Optimizations_Table        $optimizations_table
      */
     public function __construct(
         private Logger $logger,
         private Filesystem $filesystem,
         private Concatenations_Pages_Table $concatenations_pages_table,
-        private Concatenations_Table $concatenations_table
+        private Concatenations_Table $concatenations_table,
+        private Optimizations_Table $optimizations_table
     ) {}
 
     /**
@@ -60,11 +64,42 @@ final class Clean_Up_Job implements Cron_Job {
     }
 
     /**
-     * Execute the cron job.
+     * Return the minification time to live (TTL) in days.
+     *
+     * @return int
+     */
+    private function get_minification_ttl_in_days(): int {
+        /**
+         * Filters the minification time-to-live (TTL) in days.
+         *
+         * @param int $ttl_in_days Minification TTL in days.
+         */
+        return apply_filters( 'pressidium_performance_minification_ttl_in_days', 7 );
+    }
+
+    /**
+     * Return the grace period in days for expired minification records.
+     *
+     * Records are kept for this many additional days after expiring,
+     * giving them a chance to be re-validated before their files are deleted.
+     *
+     * @return int
+     */
+    private function get_minification_grace_period_in_days(): int {
+        /**
+         * Filters the grace period in days for expired minification records.
+         *
+         * @param int $grace_period_in_days Grace period in days.
+         */
+        return apply_filters( 'pressidium_performance_minification_grace_period_in_days', 7 );
+    }
+
+    /**
+     * Clean up unreferenced concatenated files.
      *
      * @return void
      */
-    public function execute(): void {
+    private function clean_up_concatenated_files(): void {
         $concatenated_dir = $this->filesystem->build_path( Output_Directory::CONCATENATED->value );
         $files_in_dir     = $this->filesystem->list_files( $concatenated_dir );
 
@@ -99,6 +134,69 @@ final class Clean_Up_Job implements Cron_Job {
                 );
             }
         }
+    }
+
+    /**
+     * Clean up expired minified files and their optimization records.
+     *
+     * Records that have been expired for longer than the grace period
+     * are deleted along with their corresponding minified files.
+     *
+     * @return void
+     */
+    private function clean_up_minified_files(): void {
+        $ttl_in_days          = $this->get_minification_ttl_in_days();
+        $grace_period_in_days = $this->get_minification_grace_period_in_days();
+
+        $expired_records = $this->optimizations_table->get_expired_optimization_records(
+            $ttl_in_days,
+            $grace_period_in_days
+        );
+
+        if ( empty( $expired_records ) ) {
+            return;
+        }
+
+        $this->logger->info(
+            sprintf( 'Found %d expired minification record(s) to clean up', count( $expired_records ) )
+        );
+
+        foreach ( $expired_records as $record ) {
+            $optimized_uri = $record->get_optimized_uri();
+            $original_uri  = $record->get_original_uri();
+
+            // Delete the database record first
+            $did_delete = $this->optimizations_table->delete_optimization_record( $original_uri );
+
+            if ( ! $did_delete ) {
+                $this->logger->warning(
+                    sprintf( 'Could not delete optimization record for %s', esc_html( $original_uri ) )
+                );
+
+                continue;
+            }
+
+            // Delete the minified file from disk
+            $file_path = URL_Utils::get_path_from_url( $optimized_uri );
+
+            if ( $file_path && $this->filesystem->exists( $file_path ) ) {
+                $this->filesystem->delete_file( $file_path );
+
+                $this->logger->info(
+                    sprintf( 'Deleted expired minified file: %s', esc_html( $optimized_uri ) )
+                );
+            }
+        }
+    }
+
+    /**
+     * Execute the cron job.
+     *
+     * @return void
+     */
+    public function execute(): void {
+        $this->clean_up_concatenated_files();
+        $this->clean_up_minified_files();
     }
 
 }
