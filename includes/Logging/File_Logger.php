@@ -30,16 +30,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class File_Logger implements Logger {
 
     /**
-     * File_Logger constructor.
-     *
-     * @param Filesystem $filesystem An instance of `Filesystem`.
-     */
-    public function __construct( private readonly Filesystem $filesystem ) {}
-
-    /**
      * @var string Minimum log level to log.
      */
-    const MIN_LOG_LEVEL = LogLevel::INFO;
+    private string $min_log_level;
+
+    /**
+     * File_Logger constructor.
+     *
+     * @param Filesystem $filesystem  An instance of `Filesystem`.
+     * @param bool       $debug_mode  Whether debug mode is enabled.
+     */
+    public function __construct(
+        private readonly Filesystem $filesystem,
+        private readonly bool $debug_mode = true,
+    ) {
+        $this->min_log_level = $this->debug_mode ? LogLevel::DEBUG : LogLevel::INFO;
+    }
 
     /**
      * Log a message with a level of an emergency — system is unusable.
@@ -212,7 +218,7 @@ final class File_Logger implements Logger {
             throw new InvalidArgumentException( 'Invalid log level: ' . esc_html( $level ) );
         }
 
-        if ( self::LEVELS[ $level ] < self::LEVELS[ self::MIN_LOG_LEVEL ] ) {
+        if ( self::LEVELS[ $level ] < self::LEVELS[ $this->min_log_level ] ) {
             return;
         }
 
@@ -221,6 +227,7 @@ final class File_Logger implements Logger {
         }
 
         if ( ! empty( $context ) ) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions
             $message = $message . PHP_EOL . print_r( $context, true );
         }
 
@@ -237,6 +244,10 @@ final class File_Logger implements Logger {
     /**
      * Log the given exception to a log file.
      *
+     * When debug mode is enabled, logs the exception message
+     * along with its full stack trace. When disabled, logs a
+     * compact summary with the message, code, file, and line.
+     *
      * @throws InvalidArgumentException If the exception message is empty.
      * @throws RuntimeException         If the log file could not be written to.
      *
@@ -245,7 +256,26 @@ final class File_Logger implements Logger {
      * @return void
      */
     public function log_exception( Exception $exception ): void {
-        $this->error( $exception->getMessage(), array( 'exception' => $exception ) );
+        if ( $this->debug_mode ) {
+            $this->error(
+                sprintf(
+                    '%s: %s',
+                    esc_html( $exception->getMessage() ),
+                    esc_html( $exception->getTraceAsString() )
+                )
+            );
+            return;
+        }
+
+        $this->error(
+            sprintf(
+                '%s (code: %s) in %s:%d',
+                $exception->getMessage(),
+                $exception->getCode(),
+                $exception->getFile(),
+                $exception->getLine()
+            )
+        );
     }
 
     /**

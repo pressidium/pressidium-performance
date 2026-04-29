@@ -570,6 +570,18 @@ function SettingsPanel() {
   }, [state.imageOptimization.keepOriginalFiles]);
 
   useEffect(() => {
+    const shouldShowNotice = state.logging.debugMode;
+
+    handleConditionalNotice(
+      shouldShowNotice,
+      {
+        id: 'debug-mode-enabled-warning',
+        message: __('Debug mode is enabled. This generates verbose log output on every request and may affect performance. It should only be enabled while actively troubleshooting an issue.', 'pressidium-performance'),
+      }
+    );
+  }, [state.logging.debugMode]);
+
+  useEffect(() => {
     const shouldShowNotice = !pressidiumPerfAdminDetails.has_page_cache;
 
     handleConditionalNotice(

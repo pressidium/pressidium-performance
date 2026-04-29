@@ -56,4 +56,7 @@ export default {
     quality: 75,
     exclusions: [],
   },
+  logging: {
+    debugMode: false,
+  },
 };

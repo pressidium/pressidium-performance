@@ -104,6 +104,9 @@ class Settings {
                 'quality'              => 80,
                 'exclusions'           => array(),
             ),
+            'logging'           => array(
+                'debugMode' => false,
+            ),
         );
     }
 

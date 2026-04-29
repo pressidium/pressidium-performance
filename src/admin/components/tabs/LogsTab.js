@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+} from '@wordpress/element';
 import {
   Panel,
   PanelBody,
@@ -7,6 +12,7 @@ import {
   FlexItem,
   Spinner,
   Button,
+  ToggleControl,
 } from '@wordpress/components';
 import {
   copy as CopyIcon,
@@ -14,14 +20,29 @@ import {
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 
+import SettingsContext from 'store/context';
+import * as ActionTypes from 'store/actionTypes';
+
 import LogView from 'components/LogView';
 import ClearLogsModal from 'components/modals/ClearLogsModal';
 
 function LogsTab() {
+  const { state, dispatch } = useContext(SettingsContext);
+
   const [logs, setLogs] = useState('');
   const [isFetching, setIsFetching] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isClearLogsModalOpen, setIsClearLogsModalOpen] = useState(false);
+
+  const onLoggingSettingChange = useCallback((key, value) => {
+    dispatch({
+      type: ActionTypes.SET_LOGGING_SETTING,
+      payload: {
+        key,
+        value,
+      },
+    });
+  }, []);
 
   const openClearLogsModal = useCallback(() => setIsClearLogsModalOpen(true), []);
   const closeClearLogsModal = useCallback(() => setIsClearLogsModalOpen(false), []);
@@ -126,6 +147,18 @@ function LogsTab() {
           <p>
             {__('Here you’ll find helpful debugging logs. If something doesn’t look right, share these logs with us when reporting the issue.', 'pressidium-performance')}
           </p>
+        </PanelRow>
+      </PanelBody>
+      <PanelBody initialOpen>
+        <PanelRow>
+          <ToggleControl
+            label={__('Debug mode', 'pressidium-performance')}
+            help={state.logging.debugMode
+              ? __('Detailed debug-level logs will be written to a log file.', 'pressidium-performance')
+              : __('Only informational messages and above are logged to the PHP error log.', 'pressidium-performance')}
+            checked={state.logging.debugMode}
+            onChange={(value) => onLoggingSettingChange('debugMode', value)}
+          />
         </PanelRow>
         <PanelRow>
           <Flex
