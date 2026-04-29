@@ -163,7 +163,16 @@ If you have spotted any bugs, or would like to request additional features from 
 
 = 1.1.0: Apr 30, 2026 =
 
-* TBD
+* Fix an issue where the Logs tab was failing to load entirely if the log file was too large
+* Fix an issue where deleting an attachment that was scheduled for optimization could cause the process to get stuck
+* Fix an issue where expired minified files were repeatedly refetched when their content was unchanged
+* Fix an issue where optimizing images on sites with a large number of attachments in their Media Library could cause memory exhaustion errors
+* Improve background process logging
+* Introduce a new background process to revert optimized images back to their original state
+* Introduce a new "Debug mode" option to log detailed information to a log file for troubleshooting (disabled by default)
+* Log to server error logs instead of a custom log file by default to limit filesystem I/O
+* Store in object cache the URLs of CSS and JavaScript files that should not be minified at all to prevent them from being repeatedly evaluated on every request
+* Clean up expired minified files after a grace period to prevent files from accumulating on the filesystem
 
 = 1.0.1: Jan 16, 2026 =
 
