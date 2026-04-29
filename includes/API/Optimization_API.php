@@ -176,6 +176,44 @@ final class Optimization_API extends API {
     }
 
     /**
+     * Handler for the `POST /pressidium-performance/v1/optimization/image/revert-all` REST route.
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_Error|WP_REST_Response
+     */
+    public function rest_image_revert_all( WP_REST_Request $request ): WP_Error|WP_REST_Response {
+        $nonce = $request->get_param( 'nonce' );
+
+        // Validate nonce
+        if ( ! wp_verify_nonce( $nonce, 'pressidium_performance_rest' ) ) {
+            $this->logger->error( 'Image revert failed due to invalid nonce' );
+
+            return new WP_Error(
+                'invalid_nonce',
+                __( 'Invalid nonce.', 'pressidium-performance' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        $attachment_ids = $this->media_library->get_all_image_attachment_ids();
+
+        if ( empty( $attachment_ids ) ) {
+            return new WP_Error(
+                'no_optimized_images_found',
+                __( 'No optimized images found in the media library.', 'pressidium-performance' )
+            );
+        }
+
+        $this->logger->debug(
+            sprintf( 'Enqueueing %d optimized image attachments for revert in the background', count( $attachment_ids ) )
+        );
+        $this->image_optimization_manager->revert_all( $attachment_ids );
+
+        return new WP_REST_Response( array( 'success' => true ) );
+    }
+
+    /**
      * Handler for the `GET /pressidium-performance/v1/optimization/minification/minifications` REST route.
      *
      * Paginated list of minifications.
@@ -464,6 +502,25 @@ final class Optimization_API extends API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'rest_image_convert_all' ),
+                'args'                => array(
+                    'nonce' => array(
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+            )
+        );
+
+        $did_register_routes = $did_register_routes && register_rest_route(
+            'pressidium-performance/v1',
+            '/optimization/image/revert-all',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'rest_image_revert_all' ),
                 'args'                => array(
                     'nonce' => array(
                         'type'              => 'string',

@@ -41,6 +41,11 @@ final class Image_Optimization_Manager implements Filters {
     private Image_Optimization_Process $image_optimization_process;
 
     /**
+     * @var Image_Revert_Process Background image revert process.
+     */
+    private Image_Revert_Process $image_revert_process;
+
+    /**
      * @var array Settings.
      */
     private array $settings;
@@ -74,6 +79,11 @@ final class Image_Optimization_Manager implements Filters {
             $image_metadata_manager,
             $posts_updater,
             $this->get_image_retention_policy()
+
+        $this->image_revert_process = new Image_Revert_Process(
+            $logger,
+            $filesystem,
+            $posts_updater
         );
     }
 
@@ -353,6 +363,33 @@ final class Image_Optimization_Manager implements Filters {
     }
 
     /**
+     * Revert all optimized image attachments back to their original state via a background process.
+     *
+     * Chunks the given attachment IDs and pushes each one to the
+     * `Image_Revert_Process`, which restores the original metadata,
+     * replaces optimized URLs in post content, and deletes the
+     * optimized files from the filesystem.
+     *
+     * @param int[] $attachment_ids Array of attachment IDs to revert.
+     *
+     * @return void
+     */
+    public function revert_all( array $attachment_ids ): void {
+        $chunks = array_chunk( $attachment_ids, 500 );
+
+        foreach ( $chunks as $chunk ) {
+            foreach ( $chunk as $attachment_id ) {
+                $this->image_revert_process->push_to_queue( $attachment_id );
+            }
+
+            $this->image_revert_process->save();
+        }
+
+        $this->logger->debug( 'Dispatching image revert process' );
+        $this->image_revert_process->dispatch();
+    }
+
+    /**
      * Return the image optimization background processes.
      *
      * @return Background_Process[]
@@ -360,6 +397,7 @@ final class Image_Optimization_Manager implements Filters {
     public function get_background_processes(): array {
         return array(
             $this->image_optimization_process,
+            $this->image_revert_process,
         );
     }
 

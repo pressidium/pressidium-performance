@@ -227,6 +227,7 @@ final class Settings_Page extends Page implements Actions, Filters {
                     'processes_route'         => 'pressidium-performance/v1/processes',
                     'image_convert_route'     => 'pressidium-performance/v1/optimization/image/convert',
                     'image_convert_all_route' => 'pressidium-performance/v1/optimization/image/convert-all',
+                    'image_revert_all_route'  => 'pressidium-performance/v1/optimization/image/revert-all',
                     'minifications_route'     => 'pressidium-performance/v1/optimization/minification/minifications',
                     'concatenations_route'    => 'pressidium-performance/v1/optimization/concatenation/concatenations',
                     'stats_route'             => 'pressidium-performance/v1/optimization/stats',
