@@ -162,7 +162,19 @@ abstract class WP_Background_Process extends WP_Async_Request {
         $this->schedule_event();
 
         // Perform remote post
-        return parent::dispatch();
+        $result = parent::dispatch();
+
+        if ( is_wp_error( $result ) ) {
+            /**
+             * Fires when a background process dispatch fails.
+             *
+             * @param WP_Error $result   The error returned by the dispatch attempt.
+             * @param string   $chain_id The background process chain ID.
+             */
+            do_action( $this->identifier . '_dispatch_failed', $result, $this->get_chain_id() );
+        }
+
+        return $result;
     }
 
     /**
@@ -847,6 +859,11 @@ abstract class WP_Background_Process extends WP_Async_Request {
      * Restart the background process if not already running
      * and data exists in the queue.
      *
+     * If the loopback dispatch fails (e.g. the server cannot reach its own
+     * admin-ajax.php URL), fall back to processing the queue directly
+     * within the current cron request to prevent the queue from being
+     * stuck indefinitely.
+     *
      * @return void
      */
     public function handle_cron_healthcheck(): void {
@@ -861,7 +878,11 @@ abstract class WP_Background_Process extends WP_Async_Request {
             exit;
         }
 
-        $this->dispatch();
+        $result = $this->dispatch();
+
+        if ( is_wp_error( $result ) ) {
+            $this->handle();
+        }
     }
 
     /**

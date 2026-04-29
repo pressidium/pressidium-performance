@@ -57,6 +57,15 @@ class Image_Optimization_Process extends Background_Process {
     }
 
     /**
+     * Return the logger instance.
+     *
+     * @return Logger
+     */
+    protected function get_logger(): Logger {
+        return $this->logger;
+    }
+
+    /**
      * Optimize the given image.
      *
      * @throws Image_Conversion_Exception If no converter is found for the given image's mime-type.

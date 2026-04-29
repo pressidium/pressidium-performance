@@ -69,6 +69,15 @@ final class Concatenate_Process extends Background_Process {
     }
 
     /**
+     * Return the logger instance.
+     *
+     * @return Logger
+     */
+    protected function get_logger(): Logger {
+        return $this->logger;
+    }
+
+    /**
      * Log a debug message.
      *
      * @param string $message Message to log.
