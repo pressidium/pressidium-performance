@@ -61,6 +61,12 @@ class Image_Metadata_Manager {
      */
     public function update( int $attachment_id, string $size_variant_name, Image $optimized_image ): void {
         $metadata = wp_get_attachment_metadata( $attachment_id );
+
+        if ( $metadata === false ) {
+            // Could not retrieve metadata (maybe attachment was deleted?)
+            return;
+        }
+
         $metadata = $this->maybe_keep_original_meta( $metadata );
 
         $relative_path = $this->ensure_path_is_relative( $optimized_image->get_path() );
