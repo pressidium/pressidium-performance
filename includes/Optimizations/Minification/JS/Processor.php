@@ -115,6 +115,14 @@ final class Processor extends Minification_Processor {
                 return;
             }
 
+            if ( ! $this->file_minification_evaluator->should_be_minified_by_url( $script_uri ) ) {
+                // File should not be minified based on its URL, bail early
+                $this->logger->debug( "File '{$script_uri}' should not be minified based on its URL, skipping..." );
+                return;
+            }
+
+            $this->logger->debug( "Could not determine if the file '{$script_uri}' should be minified based on its URL, reading the file to evaluate it..." );
+
             $file = $this->file_reader->read_remote( $script_uri );
 
             if ( ! $this->file_minification_evaluator->should_be_minified( $file ) ) {

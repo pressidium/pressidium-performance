@@ -74,6 +74,15 @@ final class Concatenate_Process extends Background_Process {
     }
 
     /**
+     * Return the logger instance.
+     *
+     * @return Logger
+     */
+    protected function get_logger(): Logger {
+        return $this->logger;
+    }
+
+    /**
      * Actually concatenate the given files.
      *
      * @throws Filesystem_Exception If the file could not be written.

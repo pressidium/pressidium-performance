@@ -21,6 +21,7 @@ use Pressidium\WP\Performance\Database\Service_Provider as Database_Service_Prov
 use Pressidium\WP\Performance\Hooks\Hooks_Manager;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Logging\File_Logger;
+use Pressidium\WP\Performance\Logging\Console_Logger;
 use Pressidium\WP\Performance\Options\WP_Options;
 use Pressidium\WP\Performance\Files\Filesystem;
 use Pressidium\WP\Performance\Storage\Transient;
@@ -227,12 +228,6 @@ final class Plugin {
         $url_builder = new URL_Builder();
         $container->add( 'url_builder', $url_builder );
 
-        $this->logger = new File_Logger( $filesystem );
-        $container->add( 'logger', $this->logger );
-
-        $logs = new Logs( $this->logger );
-        $container->add( 'logs', $logs );
-
         $options = new WP_Options();
         $container->add( 'options', $options );
 
@@ -241,6 +236,18 @@ final class Plugin {
 
         $settings = new Settings( $options );
         $container->add( 'settings', $settings );
+
+        $current_settings = $settings->get();
+        $debug_mode       = $current_settings['logging']['debugMode'] ?? false;
+
+        $this->logger = $debug_mode
+            ? new File_Logger( $filesystem, $debug_mode )
+            : new Console_Logger( $debug_mode );
+
+        $container->add( 'logger', $this->logger );
+
+        $logs = new Logs( $this->logger );
+        $container->add( 'logs', $logs );
 
         $image_factory = new Image_Factory( $settings, $filesystem );
         $container->add( 'image_factory', $image_factory );

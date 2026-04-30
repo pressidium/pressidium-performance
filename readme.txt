@@ -6,7 +6,7 @@ Tags: performance, optimizations, image optimization, convert webp, convert avif
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable Tag: 1.0.1
+Stable Tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -121,9 +121,13 @@ Yes. You can exclude specific images from being optimized by adding their paths 
 
 You can pick between lossless (no quality loss) or lossy (smaller files with some compression) optimization for your images. Just open the “Image optimization” tab and set your preferred quality level. Remember: Lower quality means smaller file size, higher quality means sharper images.
 
+= Can I revert my optimized images back to the originals? =
+
+Yes, as long as the "Keep original files" option was enabled under the "Image optimization" tab when the images were optimized. Navigate to **wp-admin → Performance → Image optimization** and click the **"Revert optimized images"** button. The plugin will restore the original files and metadata in the background. Please note that if the original files were not retained, the revert process will skip those images since there is nothing to restore.
+
 = Can I undo the changes made by the plugin? =
 
-Yes. When you uninstall the plugin, all changes it made will be automatically reverted. To ensure your original images are restored, make sure the “Keep original files” option is enabled under the “Image optimization” tab.
+Yes. Minification and concatenation changes are automatically reverted when you uninstall the plugin. However, optimized images will **not** be reverted automatically upon uninstall, they will remain as-is. If you wish to restore your original images before removing the plugin, navigate to **wp-admin → Performance → Image optimization** and click the **"Revert optimized images"** button. This will restore the original files and metadata in the background. Make sure the "Keep original files" option was enabled under the "Image optimization" tab, otherwise the original files will no longer be available to revert to.
 
 = Can I export/import the plugin settings? =
 
@@ -156,6 +160,19 @@ If you have spotted any bugs, or would like to request additional features from 
 7. Monitor every optimization task running behind the scenes.
 
 == Changelog ==
+
+= 1.1.0: Apr 30, 2026 =
+
+* Fix an issue where the Logs tab was failing to load entirely if the log file was too large
+* Fix an issue where deleting an attachment that was scheduled for optimization could cause the process to get stuck
+* Fix an issue where expired minified files were repeatedly refetched when their content was unchanged
+* Fix an issue where optimizing images on sites with a large number of attachments in their Media Library could cause memory exhaustion errors
+* Improve background process logging
+* Introduce a new background process to revert optimized images back to their original state
+* Introduce a new "Debug mode" option to log detailed information to a log file for troubleshooting (disabled by default)
+* Log to server error logs instead of a custom log file by default to limit filesystem I/O
+* Store in object cache the URLs of CSS and JavaScript files that should not be minified at all to prevent them from being repeatedly evaluated on every request
+* Clean up expired minified files after a grace period to prevent files from accumulating on the filesystem
 
 = 1.0.1: Jan 16, 2026 =
 

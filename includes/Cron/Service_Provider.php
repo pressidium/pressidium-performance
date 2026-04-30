@@ -49,7 +49,8 @@ final class Service_Provider extends AbstractServiceProvider {
              ->addArgument( 'logger' )
              ->addArgument( 'filesystem' )
              ->addArgument( 'concatenations_pages_table' )
-             ->addArgument( 'concatenations_table' );
+             ->addArgument( 'concatenations_table' )
+             ->addArgument( 'optimizations_table' );
     }
 
 }

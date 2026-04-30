@@ -17,6 +17,7 @@ import {
   replace as ReplaceIcon,
   image as ImageIcon,
   gallery as GalleryIcon,
+  undo as UndoIcon,
 } from '@wordpress/icons';
 
 import SettingsContext from 'store/context';
@@ -25,16 +26,21 @@ import * as ActionTypes from 'store/actionTypes';
 import ImageFormatsTable from 'components/tables/ImageFormatsTable';
 import ImageOptimizationExclusionsTable from 'components/tables/exclusion/ImageOptimizationExclusionsTable';
 import OptimizeExistingImagesModal from 'components/modals/OptimizeExistingImagesModal';
+import RevertOptimizedImagesModal from 'components/modals/RevertOptimizedImagesModal';
 
 function ImageOptimizationTab(props) {
   const { state, dispatch } = useContext(SettingsContext);
 
-  const { optimizeExistingImages } = props;
+  const { optimizeExistingImages, revertOptimizedImages } = props;
 
   const [isOptimizeExistingImagesModalOpen, setIsOptimizeExistingImagesModalOpen] = useState(false);
+  const [isRevertOptimizedImagesModalOpen, setIsRevertOptimizedImagesModalOpen] = useState(false);
 
   const openOptimizeExistingImagesModal = useCallback(() => setIsOptimizeExistingImagesModalOpen(true), []);
   const closeOptimizeExistingImagesModal = useCallback(() => setIsOptimizeExistingImagesModalOpen(false), []);
+
+  const openRevertOptimizedImagesModal = useCallback(() => setIsRevertOptimizedImagesModalOpen(true), []);
+  const closeRevertOptimizedImagesModal = useCallback(() => setIsRevertOptimizedImagesModalOpen(false), []);
 
   const onImageOptimizationSettingChange = useCallback((key, value) => {
     dispatch({
@@ -158,20 +164,41 @@ function ImageOptimizationTab(props) {
       </PanelBody>
       <PanelBody opened>
         <PanelRow>
-          <Button
-            variant="secondary"
-            icon={GalleryIcon}
-            onClick={openOptimizeExistingImagesModal}
-            disabled={false}
-            style={{ paddingRight: '10px' }}
-          >
-            {__('Optimize existing images now', 'pressidium-performance')}
-          </Button>
-          <OptimizeExistingImagesModal
-            isOpen={isOptimizeExistingImagesModalOpen}
-            onClose={closeOptimizeExistingImagesModal}
-            optimizeExistingImages={optimizeExistingImages}
-          />
+          <Flex gap={3} wrap>
+            <FlexItem>
+              <Button
+                variant="secondary"
+                icon={GalleryIcon}
+                onClick={openOptimizeExistingImagesModal}
+                disabled={false}
+                style={{ paddingRight: '10px' }}
+              >
+                {__('Optimize existing images now', 'pressidium-performance')}
+              </Button>
+              <OptimizeExistingImagesModal
+                isOpen={isOptimizeExistingImagesModalOpen}
+                onClose={closeOptimizeExistingImagesModal}
+                optimizeExistingImages={optimizeExistingImages}
+              />
+            </FlexItem>
+            <FlexItem>
+              <Button
+                variant="secondary"
+                icon={UndoIcon}
+                onClick={openRevertOptimizedImagesModal}
+                disabled={false}
+                isDestructive
+                style={{ paddingRight: '10px' }}
+              >
+                {__('Revert optimized images', 'pressidium-performance')}
+              </Button>
+              <RevertOptimizedImagesModal
+                isOpen={isRevertOptimizedImagesModalOpen}
+                onClose={closeRevertOptimizedImagesModal}
+                revertOptimizedImages={revertOptimizedImages}
+              />
+            </FlexItem>
+          </Flex>
         </PanelRow>
       </PanelBody>
     </Panel>

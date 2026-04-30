@@ -57,9 +57,12 @@ final class Logs_API extends API {
             );
         }
 
+        $max_lines = $request->get_param( 'lines' );
+        $max_lines = is_numeric( $max_lines ) ? absint( $max_lines ) : 100;
+
         $response = array(
             'success' => true,
-            'data'    => $this->logs->get_logs(),
+            'data'    => $this->logs->get_logs( $max_lines ),
         );
 
         return rest_ensure_response( $response );
@@ -114,6 +117,12 @@ final class Logs_API extends API {
                         'type'              => 'string',
                         'required'          => true,
                         'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                    'lines' => array(
+                        'type'              => 'integer',
+                        'required'          => false,
+                        'default'           => 100,
+                        'sanitize_callback' => 'absint',
                     ),
                 ),
                 'permission_callback' => function () {

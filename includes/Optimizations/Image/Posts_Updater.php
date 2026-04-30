@@ -92,4 +92,48 @@ class Posts_Updater {
         }
     }
 
+    /**
+     * Replace multiple optimized URLs with their original URLs in all posts using a single query.
+     *
+     * Uses a direct SQL `UPDATE` with chained `REPLACE()` calls to avoid
+     * loading post objects into memory. This is significantly more
+     * memory-efficient than running separate `WP_Query` and `wp_update_post()`
+     * calls for each URL pair.
+     *
+     * @param array<string, string> $replacements Associative array mapping optimized URLs to original URLs.
+     *
+     * @return void
+     */
+    public function batch_revert_posts( array $replacements ): void {
+        global $wpdb;
+
+        if ( empty( $replacements ) ) {
+            return;
+        }
+
+        $set_expression = 'post_content';
+        $set_params     = array();
+        $where_clauses  = array();
+        $where_params   = array();
+
+        foreach ( $replacements as $optimized_url => $original_url ) {
+            $set_expression  = "REPLACE({$set_expression}, %s, %s)";
+            $set_params[]    = $optimized_url;
+            $set_params[]    = $original_url;
+
+            $where_clauses[] = 'post_content LIKE %s';
+            $where_params[]  = '%' . $wpdb->esc_like( $optimized_url ) . '%';
+        }
+
+        $where = implode( ' OR ', $where_clauses );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic SQL built with $wpdb->prepare() placeholders.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->posts} SET post_content = {$set_expression} WHERE {$where}",
+                array_merge( $set_params, $where_params )
+            )
+        );
+    }
+
 }

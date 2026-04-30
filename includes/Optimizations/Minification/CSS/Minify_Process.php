@@ -69,6 +69,15 @@ final class Minify_Process extends Background_Process {
     }
 
     /**
+     * Return the logger instance.
+     *
+     * @return Logger
+     */
+    protected function get_logger(): Logger {
+        return $this->logger;
+    }
+
+    /**
      * Actually minify the given file.
      *
      * @throws Minification_Exception If the file could not be minified.

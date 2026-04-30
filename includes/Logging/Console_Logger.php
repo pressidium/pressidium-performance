@@ -26,9 +26,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Console_Logger implements Logger {
 
     /**
-     * Console_Logger constructor.
+     * @var string Minimum log level to log.
      */
-    public function __construct() {}
+    private string $min_log_level;
+
+    /**
+     * Console_Logger constructor.
+     *
+     * @param bool $debug_mode Whether debug mode is enabled.
+     */
+    public function __construct(
+        private readonly bool $debug_mode = false,
+    ) {
+        $this->min_log_level = $this->debug_mode ? LogLevel::DEBUG : LogLevel::INFO;
+    }
 
     /**
      * Log a message with a level of an emergency — system is unusable.
@@ -143,11 +154,16 @@ class Console_Logger implements Logger {
             throw new InvalidArgumentException( 'Invalid log level: ' . esc_html( $level ) );
         }
 
+        if ( self::LEVELS[ $level ] < self::LEVELS[ $this->min_log_level ] ) {
+            return;
+        }
+
         if ( empty( $message ) ) {
             throw new InvalidArgumentException( 'Empty message' );
         }
 
         if ( ! empty( $context ) ) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions
             $message = $message . PHP_EOL . print_r( $context, true );
         }
 
@@ -158,6 +174,10 @@ class Console_Logger implements Logger {
     /**
      * Log the given exception.
      *
+     * When debug mode is enabled, logs the exception message
+     * along with its full stack trace. When disabled, logs a
+     * compact summary with the message, code, file, and line.
+     *
      * @throws InvalidArgumentException If the exception message is empty.
      *
      * @param Exception $exception Exception to log.
@@ -165,11 +185,24 @@ class Console_Logger implements Logger {
      * @return void
      */
     public function log_exception( Exception $exception ): void {
+        if ( $this->debug_mode ) {
+            $this->error(
+                sprintf(
+                    '%s: %s',
+                    esc_html( $exception->getMessage() ),
+                    esc_html( $exception->getTraceAsString() )
+                )
+            );
+            return;
+        }
+
         $this->error(
             sprintf(
-                '%s: %s',
-                esc_html( $exception->getMessage() ),
-                esc_html( $exception->getTraceAsString() )
+                '%s (code: %s) in %s:%d',
+                $exception->getMessage(),
+                $exception->getCode(),
+                $exception->getFile(),
+                $exception->getLine()
             )
         );
     }
@@ -177,9 +210,11 @@ class Console_Logger implements Logger {
     /**
      * Return an empty string since console logs are not stored in a file.
      *
+     * @param int $max_lines Maximum number of lines to return (unused).
+     *
      * @return string
      */
-    public function get_logs(): string {
+    public function get_logs( int $max_lines = 0 ): string {
         return '';
     }
 

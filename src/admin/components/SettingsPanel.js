@@ -515,6 +515,56 @@ function SettingsPanel() {
     }
   };
 
+  const revertOptimizedImages = async () => {
+    const { image_revert_all_route: route, nonce } = pressidiumPerfAdminDetails.api;
+
+    const options = {
+      path: route,
+      method: 'POST',
+      data: {
+        nonce,
+      },
+    };
+
+    try {
+      const response = await apiFetch(options);
+
+      if ('success' in response && response.success) {
+        appendNotice({
+          message: __('Your images are being reverted in the background. This process might take a while. Feel free to keep working as usual.', 'pressidium-performance'),
+          status: 'success',
+          id: 'image-revert-success',
+        });
+      } else {
+        appendNotice({
+          message: __('Could not revert image(s).', 'pressidium-performance'),
+          status: 'error',
+          id: 'image-not-revert-error',
+        });
+      }
+    } catch (error) {
+      if ('code' in error && error.code === 'invalid_nonce') {
+        appendNotice({
+          message: __('Could not pass security check.', 'pressidium-performance'),
+          status: 'error',
+          id: 'failed-security-check-error',
+        });
+      } else if ('code' in error && error.code === 'no_optimized_images_found') {
+        appendNotice({
+          message: __('No optimized images found to revert.', 'pressidium-performance'),
+          status: 'warning',
+          id: 'no-optimized-images-warning',
+        });
+      } else {
+        appendNotice({
+          message: __('Could not revert image(s).', 'pressidium-performance'),
+          status: 'error',
+          id: 'image-not-revert-error',
+        });
+      }
+    }
+  };
+
   useBeforeunload(hasUnsavedChanges ? (e) => {
     /*
      * Some browsers used to display the returned string in
@@ -568,6 +618,18 @@ function SettingsPanel() {
       }
     );
   }, [state.imageOptimization.keepOriginalFiles]);
+
+  useEffect(() => {
+    const shouldShowNotice = state.logging.debugMode;
+
+    handleConditionalNotice(
+      shouldShowNotice,
+      {
+        id: 'debug-mode-enabled-warning',
+        message: __('Debug mode is enabled. This generates verbose log output on every request and may affect performance. It should only be enabled while actively troubleshooting an issue.', 'pressidium-performance'),
+      }
+    );
+  }, [state.logging.debugMode]);
 
   useEffect(() => {
     const shouldShowNotice = !pressidiumPerfAdminDetails.has_page_cache;
@@ -717,6 +779,7 @@ function SettingsPanel() {
                   },
                   'image-optimization': {
                     optimizeExistingImages,
+                    revertOptimizedImages,
                   },
                 };
 

@@ -197,6 +197,15 @@ function settingsReducer(state, action) {
         },
       };
 
+    case ActionTypes.SET_LOGGING_SETTING:
+      return {
+        ...state,
+        logging: {
+          ...state.logging,
+          [action.payload.key]: action.payload.value,
+        },
+      };
+
     default:
       return state;
   }

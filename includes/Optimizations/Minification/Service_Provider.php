@@ -56,7 +56,8 @@ final class Service_Provider extends AbstractServiceProvider {
         $this->getContainer()->add( 'file_minification_evaluator', File_Minification_Evaluator::class )
              ->addArgument( 'logger' )
              ->addArgument( 'optimizations_table' )
-             ->addArgument( 'settings' );
+             ->addArgument( 'settings' )
+             ->addArgument( 'transient' );
 
         $this->getContainer()->add( 'js_minification_processor', JS_Minification_Processor::class )
              ->addArgument( 'options' )

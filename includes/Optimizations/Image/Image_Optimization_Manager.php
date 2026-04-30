@@ -18,9 +18,6 @@ use Pressidium\WP\Performance\Utils\Array_Utils;
 use Pressidium\WP\Performance\Utils\Numeric_Utils;
 use Pressidium\WP\Performance\Enumerations\Image_Retention_Policy;
 use Pressidium\WP\Performance\Enumerations\Image_Editor;
-use Pressidium\WP\Performance\Exceptions\Image_Conversion_Exception;
-
-use InvalidArgumentException;
 
 use WP_Post;
 
@@ -39,6 +36,16 @@ final class Image_Optimization_Manager implements Filters {
      * @var Image_Optimization_Process Background image optimization process.
      */
     private Image_Optimization_Process $image_optimization_process;
+
+    /**
+     * @var Image_Enqueue_Process Intermediate process that filters and enqueues attachments.
+     */
+    private Image_Enqueue_Process $image_enqueue_process;
+
+    /**
+     * @var Image_Revert_Process Background image revert process.
+     */
+    private Image_Revert_Process $image_revert_process;
 
     /**
      * @var array Settings.
@@ -60,7 +67,7 @@ final class Image_Optimization_Manager implements Filters {
         private readonly Logger $logger,
         Settings $settings_object,
         Filesystem $filesystem,
-        private readonly Image_Attachment_Factory $image_attachment_factory,
+        Image_Attachment_Factory $image_attachment_factory,
         Converter_Manager $converter_manager,
         Image_Metadata_Manager $image_metadata_manager,
         Posts_Updater $posts_updater
@@ -73,7 +80,18 @@ final class Image_Optimization_Manager implements Filters {
             $converter_manager,
             $image_metadata_manager,
             $posts_updater,
-            $this->get_image_retention_policy()
+            $image_attachment_factory,
+            $this->get_image_retention_policy(),
+            $this->settings['imageOptimization']['formats'] ?? array()
+        );
+
+        $this->image_enqueue_process = new Image_Enqueue_Process( $logger );
+        $this->image_enqueue_process->set_optimization_process( $this->image_optimization_process );
+
+        $this->image_revert_process = new Image_Revert_Process(
+            $logger,
+            $filesystem,
+            $posts_updater
         );
     }
 
@@ -100,104 +118,40 @@ final class Image_Optimization_Manager implements Filters {
     }
 
     /**
-     * Whether we should optimize images with the given MIME type.
-     *
-     * @param string $mime_type MIME type to check.
-     *
-     * @return bool
-     */
-    private function should_optimize_mime_type( string $mime_type ): bool {
-        $formats = $this->settings['imageOptimization']['formats'] ?? array();
-
-        if ( ! array_key_exists( $mime_type, $formats ) ) {
-            // No settings for this mime type, bail early
-            return false;
-        }
-
-        $mime_type_settings = $formats[ $mime_type ];
-
-        return array_key_exists( 'shouldOptimize', $mime_type_settings ) && $mime_type_settings['shouldOptimize'];
-    }
-
-    /**
-     * Whether the given image size variant should be optimized.
-     *
-     * @param Image_Attachment_Size $size_variant Size variant of the image to check.
-     *
-     * @return bool
-     */
-    private function should_optimize_image( Image_Attachment_Size $size_variant ): bool {
-        $is_optimized = $size_variant->is_optimized();
-
-        if ( $is_optimized ) {
-            // Image is already optimized, bail early
-            $this->logger->debug(
-                sprintf( 'Image \'%s\' is already optimized', esc_html( $size_variant->get_path() ) )
-            );
-            return false;
-        }
-
-        $image = $size_variant->get_image();
-
-        if ( $image->is_excluded() ) {
-            // Image is excluded from optimization, bail early
-            $this->logger->debug(
-                sprintf( 'Image \'%s\' is excluded from optimization', esc_html( $size_variant->get_path() ) )
-            );
-            return false;
-        }
-
-        if ( ! $image->is_supported_mime_type() ) {
-            // Image mime type is not supported, bail early
-            $this->logger->debug(
-                sprintf( 'Image \'%s\' mime type is not supported', esc_html( $size_variant->get_path() ) )
-            );
-            return false;
-        }
-
-        if ( ! $this->should_optimize_mime_type( $image->get_mime_type() ) ) {
-            // Image optimization is disabled for this mime type, bail early
-            $this->logger->debug(
-                sprintf( 'Image \'%s\' mime type should not be optimized', esc_html( $size_variant->get_path() ) )
-            );
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Push the images of all size variants of the given image attachment to the queue of images to optimize.
-     *
-     * @param Image_Attachment $image_attachment Image attachment to push its size variants' images to the queue.
-     *
-     * @return void
-     */
-    public function push_to_queue( Image_Attachment $image_attachment ): void {
-        foreach ( $image_attachment->get_sizes() as $size_variant_name => $size_variant ) {
-            if ( ! $this->should_optimize_image( $size_variant ) ) {
-                // Image should not be optimized, bail early
-                continue;
-            }
-
-            // Push the image to the optimization queue for background processing
-            $this->image_optimization_process->push_to_queue(
-                new Image_Optimization_Payload(
-                    $image_attachment->get_attachment_id(),
-                    $size_variant_name,
-                    $size_variant->get_image()
-                )
-            );
-        }
-    }
-
-    /**
      * Start optimizing images in the background.
      *
      * @return void
      */
     public function process_queue(): void {
         $this->image_optimization_process->save()->dispatch();
+    }
+
+    /**
+     * Enqueue all image attachments for optimization via a background process.
+     *
+     * Chunks the given attachment IDs and pushes each chunk to the
+     * `Image_Enqueue_Process`, which filters out already-optimized
+     * attachments in the background and feeds the rest into the
+     * `Image_Optimization_Process`.
+     *
+     * This avoids both memory exhaustion and PHP timeouts, since neither
+     * the REST endpoint nor any single PHP process needs to load metadata
+     * for all attachments at once.
+     *
+     * @param int[] $attachment_ids Array of attachment IDs to enqueue.
+     *
+     * @return void
+     */
+    public function enqueue_all( array $attachment_ids ): void {
+        $chunks = array_chunk( $attachment_ids, 500 );
+
+        foreach ( $chunks as $chunk ) {
+            $this->image_enqueue_process->push_to_queue( $chunk );
+            $this->image_enqueue_process->save();
+        }
+
+        $this->logger->debug( 'Dispatching image enqueue process' );
+        $this->image_enqueue_process->dispatch();
     }
 
     /**
@@ -223,15 +177,7 @@ final class Image_Optimization_Manager implements Filters {
             return $metadata;
         }
 
-        try {
-            $attachment = $this->image_attachment_factory->create( $attachment_id );
-        } catch ( InvalidArgumentException | Image_Conversion_Exception $exception ) {
-            // Invalid attachment, bail early
-            $this->logger->error( sprintf( 'Could not optimize image (%s)', $exception->getMessage() ) );
-            return $metadata;
-        }
-
-        $this->push_to_queue( $attachment );
+        $this->image_optimization_process->push_to_queue( $attachment_id );
         $this->process_queue();
 
         return $metadata;
@@ -353,13 +299,42 @@ final class Image_Optimization_Manager implements Filters {
     }
 
     /**
+     * Revert all optimized image attachments back to their original state via a background process.
+     *
+     * Chunks the given attachment IDs and pushes each one to the
+     * `Image_Revert_Process`, which restores the original metadata,
+     * replaces optimized URLs in post content, and deletes the
+     * optimized files from the filesystem.
+     *
+     * @param int[] $attachment_ids Array of attachment IDs to revert.
+     *
+     * @return void
+     */
+    public function revert_all( array $attachment_ids ): void {
+        $chunks = array_chunk( $attachment_ids, 500 );
+
+        foreach ( $chunks as $chunk ) {
+            foreach ( $chunk as $attachment_id ) {
+                $this->image_revert_process->push_to_queue( $attachment_id );
+            }
+
+            $this->image_revert_process->save();
+        }
+
+        $this->logger->debug( 'Dispatching image revert process' );
+        $this->image_revert_process->dispatch();
+    }
+
+    /**
      * Return the image optimization background processes.
      *
      * @return Background_Process[]
      */
     public function get_background_processes(): array {
         return array(
+            $this->image_enqueue_process,
             $this->image_optimization_process,
+            $this->image_revert_process,
         );
     }
 

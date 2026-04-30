@@ -61,9 +61,12 @@ interface Logger extends LoggerInterface {
      *
      * @throws RuntimeException If the logs cannot be retrieved.
      *
+     * @param int $max_lines Maximum number of lines to return from the end of the log.
+     *                       A value of `0` means return all lines.
+     *
      * @return string
      */
-    public function get_logs(): string;
+    public function get_logs( int $max_lines = 0 ): string;
 
     /**
      * Clear logs.

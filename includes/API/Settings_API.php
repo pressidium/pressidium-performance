@@ -48,6 +48,7 @@ class Settings_API extends API {
                 'minification',
                 'concatenation',
                 'imageOptimization',
+                'logging',
             ),
             'properties' => array(
                 'minification' => array(
@@ -347,6 +348,17 @@ class Settings_API extends API {
                                     ),
                                 ),
                             ),
+                        ),
+                    ),
+                ),
+                'logging'           => array(
+                    'type'       => 'object',
+                    'required'   => array(
+                        'debugMode',
+                    ),
+                    'properties' => array(
+                        'debugMode' => array(
+                            'type' => 'boolean',
                         ),
                     ),
                 ),

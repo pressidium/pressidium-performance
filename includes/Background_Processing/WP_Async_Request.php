@@ -97,7 +97,20 @@ abstract class WP_Async_Request {
         $url  = add_query_arg( $this->get_query_args(), $this->get_query_url() );
         $args = $this->get_post_args();
 
-        return wp_remote_post( esc_url_raw( $url ), $args );
+        $result = wp_remote_post( esc_url_raw( $url ), $args );
+
+        /**
+         * Fires after a background process dispatch attempt.
+         *
+         * Can be used for logging dispatch failures that would otherwise
+         * go unnoticed due to the non-blocking nature of the request.
+         *
+         * @param array|WP_Error $result The dispatch result.
+         * @param string         $url    The dispatched URL (without query args).
+         */
+        do_action( $this->identifier . '_dispatch_result', $result, $this->get_query_url() );
+
+        return $result;
     }
 
     /**
