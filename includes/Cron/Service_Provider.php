@@ -31,6 +31,7 @@ final class Service_Provider extends AbstractServiceProvider {
      */
     protected $provides = array(
         'clean_up_cron_job',
+        'collector_cron_job',
     );
 
     /**
@@ -50,7 +51,13 @@ final class Service_Provider extends AbstractServiceProvider {
              ->addArgument( 'filesystem' )
              ->addArgument( 'concatenations_pages_table' )
              ->addArgument( 'concatenations_table' )
-             ->addArgument( 'optimizations_table' );
+             ->addArgument( 'concatenations_files_table' )
+             ->addArgument( 'optimizations_table' )
+             ->addArgument( 'minified_path_builder' );
+
+        $this->getContainer()->add( 'collector_cron_job', Collector_Job::class )
+             ->addArgument( 'logger' )
+             ->addArgument( 'edge_collector_process' );
     }
 
 }

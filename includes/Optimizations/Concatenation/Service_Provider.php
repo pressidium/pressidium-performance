@@ -42,6 +42,7 @@ final class Service_Provider extends AbstractServiceProvider {
      * @var array
      */
     protected $provides = array(
+        'concatenation_cleaner',
         'js_concatenation_processor',
         'css_concatenation_processor',
     );
@@ -58,6 +59,14 @@ final class Service_Provider extends AbstractServiceProvider {
      * @return void
      */
     public function register(): void {
+        $this->getContainer()->add( 'concatenation_cleaner', Concatenation_Cleaner::class )
+             ->addArgument( 'logger' )
+             ->addArgument( 'filesystem' )
+             ->addArgument( 'concatenations_table' )
+             ->addArgument( 'concatenations_pages_table' )
+             ->addArgument( 'concatenations_files_table' )
+             ->addArgument( 'transient' );
+
         $this->getContainer()->add( 'js_concatenation_processor', JS_Concatenation_Processor::class )
              ->addArgument( 'options' )
              ->addArgument( 'logger' )
@@ -74,10 +83,12 @@ final class Service_Provider extends AbstractServiceProvider {
              ) )
              ->addArgument( 'concatenations_pages_table' )
              ->addArgument( 'concatenations_table' )
+             ->addArgument( 'concatenations_files_table' )
              ->addArgument( 'sri_validator' )
              ->addArgument( new JS_Minifier(
                  $this->getContainer()->get( 'logger' ),
                  $this->getContainer()->get( 'file_minification_evaluator' ),
+                 $this->getContainer()->get( 'minified_path_builder' ),
              ) )
              ->addArgument( 'settings' );
 
@@ -97,10 +108,13 @@ final class Service_Provider extends AbstractServiceProvider {
              ) )
              ->addArgument( 'concatenations_pages_table' )
              ->addArgument( 'concatenations_table' )
+             ->addArgument( 'concatenations_files_table' )
              ->addArgument( 'sri_validator' )
              ->addArgument( new CSS_Minifier(
                  $this->getContainer()->get( 'logger' ),
                  $this->getContainer()->get( 'file_minification_evaluator' ),
+                 $this->getContainer()->get( 'filesystem' ),
+                 $this->getContainer()->get( 'minified_path_builder' ),
              ) )
              ->addArgument( 'settings' );
     }

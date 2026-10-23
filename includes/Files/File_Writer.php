@@ -40,8 +40,10 @@ final class File_Writer {
      */
     public function write( File $file, string $sub_dir = '' ): void {
         if ( $file->is_empty() ) {
-            // File is empty, bail early
-            return;
+            // Empty contents mean something upstream failed, not that there is nothing to do
+            throw new Filesystem_Exception(
+                sprintf( 'Refusing to write an empty file: %s', esc_html( (string) $file->get_path() ) )
+            );
         }
 
         // Prepend the root destination directory to the relative file path

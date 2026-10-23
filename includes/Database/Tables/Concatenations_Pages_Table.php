@@ -10,9 +10,7 @@ namespace Pressidium\WP\Performance\Database\Tables;
 
 use Pressidium\WP\Performance\Database\Blueprint;
 use Pressidium\WP\Performance\Database\Table;
-use Pressidium\WP\Performance\Database\Query_Builder\Query;
 use Pressidium\WP\Performance\Database\Query_Builder\Query_Exception;
-use Pressidium\WP\Performance\Database\Query_Builder\WP_Database;
 use Pressidium\WP\Performance\Logging\Logger;
 
 use BadMethodCallException;
@@ -82,20 +80,6 @@ final class Concatenations_Pages_Table extends Table {
     }
 
     /**
-     * Create a new query instance for this table and return it.
-     *
-     * @return Query
-     */
-    public function query(): Query {
-        global $wpdb;
-
-        $query = new Query( new WP_Database( $wpdb ) );
-        $query->from( $this->get_prefix() . $this->get_table_name() );
-
-        return $query;
-    }
-
-    /**
      * Whether a mapping exists for the given page hash.
      *
      * @param string $page_hash Page hash to check.
@@ -122,6 +106,38 @@ final class Concatenations_Pages_Table extends Table {
         }
 
         return (bool) $query;
+    }
+
+    /**
+     * Return the mapping row for the given page hash.
+     *
+     * Reads the aggregated hash and the timestamp together, so `set_mapping()`
+     * can decide whether anything has to be written without a second query.
+     *
+     * @param string $page_hash Page hash.
+     * @param string $type      Concatenation type.
+     *
+     * @return ?object Row holding `aggregated_hash` and `updated_at`, `null` if there is none.
+     */
+    private function get_mapping_row( string $page_hash, string $type ): ?object {
+        try {
+            $row = $this->query()
+                        ->where( 'page_hash', $page_hash )
+                        ->and_where( 'type', $type )
+                        ->select( array( 'aggregated_hash', 'updated_at' ) )
+                        ->first();
+        } catch ( Query_Exception | Exception $exception ) {
+            $this->logger->error(
+                sprintf(
+                    'Could not retrieve mapping row: %s',
+                    esc_html( $exception->getMessage() )
+                )
+            );
+
+            return null;
+        }
+
+        return is_object( $row ) ? $row : null;
     }
 
     /**
@@ -211,20 +227,94 @@ final class Concatenations_Pages_Table extends Table {
     }
 
     /**
+     * Bump the `updated_at` timestamp of the given mapping.
+     *
+     * A mapping is only rewritten when the page's assets change, and MySQL fires
+     * `ON UPDATE CURRENT_TIMESTAMP` only when a value actually changes. So without
+     * an explicit touch, `updated_at` records when the mapping last changed instead
+     * of when the page was last seen.
+     *
+     * We use a raw SQL query here because the query builder's `SET` clause doesn't
+     * support raw expressions like `CURRENT_TIMESTAMP`.
+     *
+     * @param string $page_hash Page hash.
+     * @param string $type      Concatenation type.
+     *
+     * @return bool Whether the mapping was touched successfully.
+     */
+    public function touch_mapping( string $page_hash, string $type ): bool {
+        global $wpdb;
+
+        $table_name = $this->get_prefix() . $this->get_table_name();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $result = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "UPDATE {$table_name} SET updated_at = CURRENT_TIMESTAMP WHERE page_hash = %s AND type = %s",
+                $page_hash,
+                $type
+            )
+        );
+
+        if ( $result === false ) {
+            $this->logger->error(
+                sprintf( 'Could not touch mapping: %s', esc_html( $wpdb->last_error ) )
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Either insert the given mapping into the database if it doesn't exist, or update it if it does.
      *
-     * @param string $page_hash       Page hash.
-     * @param string $type            Concatenation type.
-     * @param string $aggregated_hash Aggregated hash.
+     * This runs on every frontend render, so it does as little writing as it can get
+     * away with. An unchanged mapping is only touched once per touch interval, which
+     * keeps `updated_at` fresh enough for a cleanup job that works in days, without
+     * writing on every page view.
+     *
+     * @param string $page_hash                  Page hash.
+     * @param string $type                       Concatenation type.
+     * @param string $aggregated_hash            Aggregated hash.
+     * @param int    $touch_interval_in_seconds  (Optional) How stale an unchanged mapping has to be
+     *                                           before it is touched. Defaults to a day.
      *
      * @return bool `true` if the mapping was set successfully, `false` otherwise.
      */
-    public function set_mapping( string $page_hash, string $type, string $aggregated_hash ): bool {
-        if ( ! $this->has_mapping( $page_hash, $type ) ) {
+    public function set_mapping(
+        string $page_hash,
+        string $type,
+        string $aggregated_hash,
+        int $touch_interval_in_seconds = DAY_IN_SECONDS
+    ): bool {
+        $row = $this->get_mapping_row( $page_hash, $type );
+
+        if ( $row === null ) {
             return $this->insert_mapping( $page_hash, $type, $aggregated_hash );
         }
 
-        return $this->update_mapping( $page_hash, $type, $aggregated_hash );
+        if ( $row->aggregated_hash !== $aggregated_hash ) {
+            // The page's assets have changed, so updating the mapping will bump `updated_at` on its own
+            return $this->update_mapping( $page_hash, $type, $aggregated_hash );
+        }
+
+        $updated_at = strtotime( $row->updated_at . ' UTC' );
+
+        if ( $updated_at === false ) {
+            // Could not make sense of the stored timestamp, touch it to get a usable one
+            return $this->touch_mapping( $page_hash, $type );
+        }
+
+        if ( $updated_at > time() - $touch_interval_in_seconds ) {
+            // Still fresh enough, leave it alone
+            return true;
+        }
+
+        // The mapping is unchanged, so touch it to keep it alive
+        return $this->touch_mapping( $page_hash, $type );
     }
 
     /**
@@ -252,6 +342,49 @@ final class Concatenations_Pages_Table extends Table {
         }
 
         return (bool) $query;
+    }
+
+    /**
+     * Delete all mappings that have not been seen for the given number of days.
+     *
+     * A mapping is considered expired if its `updated_at` timestamp is older than
+     * the given TTL in days. The grace period keeps mappings around for a bit longer
+     * after expiring, giving them a chance to be touched by a late visitor.
+     *
+     * @param int $ttl_in_days          The TTL in days after which a mapping is considered expired.
+     * @param int $grace_period_in_days Additional days after expiration before a mapping is deleted.
+     *
+     * @return int Number of mappings deleted.
+     */
+    public function delete_expired_mappings( int $ttl_in_days, int $grace_period_in_days = 0 ): int {
+        $threshold_in_days   = $ttl_in_days + $grace_period_in_days;
+        $threshold_timestamp = gmdate( 'Y-m-d H:i:s', time() - ( $threshold_in_days * DAY_IN_SECONDS ) );
+
+        try {
+            $expired_count = (int) $this->query()
+                                        ->where( 'updated_at', '<', $threshold_timestamp )
+                                        ->select( 'COUNT(*)' )
+                                        ->get_scalar();
+
+            if ( $expired_count === 0 ) {
+                return 0;
+            }
+
+            $this->query()
+                 ->where( 'updated_at', '<', $threshold_timestamp )
+                 ->delete();
+        } catch ( BadMethodCallException | Query_Exception | Exception $exception ) {
+            $this->logger->error(
+                sprintf(
+                    'Could not delete expired mappings: %s',
+                    esc_html( $exception->getMessage() )
+                )
+            );
+
+            return 0;
+        }
+
+        return $expired_count;
     }
 
     /**

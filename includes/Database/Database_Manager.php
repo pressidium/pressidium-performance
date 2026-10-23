@@ -56,16 +56,48 @@ final class Database_Manager {
     }
 
     /**
+     * Return the stored table versions, keyed by table slug.
+     *
+     * @return array<string, string>|false Table versions, or `false` if none are stored.
+     */
+    private function get_stored_table_versions(): array|false {
+        $table_versions = $this->options->get( self::TABLE_VERSIONS_OPTIONS_KEY );
+
+        return is_array( $table_versions ) ? $table_versions : false;
+    }
+
+    /**
+     * Return a callback that stores the given table's version after each of its migrations.
+     *
+     * @param Table $table Table being migrated.
+     *
+     * @return callable(string): void
+     */
+    private function record_migration_for( Table $table ): callable {
+        return function ( string $version ) use ( $table ) {
+            $table_versions = $this->get_stored_table_versions() ?: array();
+
+            $table_versions[ $table->get_table_slug() ] = $version;
+
+            $this->options->set( self::TABLE_VERSIONS_OPTIONS_KEY, $table_versions );
+        };
+    }
+
+    /**
      * Create the database tables.
      *
      * @return bool
      */
     public function create_tables(): bool {
-        $table_versions = array();
+        $stored_versions = $this->get_stored_table_versions() ?: array();
+        $table_versions  = array();
 
         foreach ( $this->tables as $table ) {
             try {
-                $table->create();
+                $table->create(
+                    $stored_versions[ $table->get_table_slug() ] ?? null,
+                    $this->record_migration_for( $table )
+                );
 
                 $table_versions[ $table->get_table_slug() ] = $table->get_version();
             } catch ( Exception $exception ) {
@@ -84,12 +116,15 @@ final class Database_Manager {
     /**
      * Upgrade the database tables depending on the current database version.
      *
+     * Tables that have been registered since the last time the table versions were stored
+     * (i.e. tables added by a plugin update) are created, instead of being upgraded.
+     *
      * Will return `false` if there was an error while upgrading, or there was nothing to upgrade.
      *
      * @return bool
      */
     public function maybe_upgrade_tables(): bool {
-        $table_versions = $this->options->get( self::TABLE_VERSIONS_OPTIONS_KEY );
+        $table_versions = $this->get_stored_table_versions();
         $did_upgrade    = false;
 
         if ( $table_versions === false ) {
@@ -98,7 +133,23 @@ final class Database_Manager {
 
         foreach ( $this->tables as $table ) {
             try {
-                $new_version     = $table->get_version();
+                $new_version = $table->get_version();
+
+                if ( ! isset( $table_versions[ $table->get_table_slug() ] ) ) {
+                    /*
+                     * We have no record of this table, so it must have been registered
+                     * after the table versions were last stored. Create it instead.
+                     */
+                    $table->create();
+
+                    $table_versions[ $table->get_table_slug() ] = $new_version;
+                    $did_upgrade                                = true;
+
+                    $this->logger->info( "Database table {$table->get_table_slug()} created" );
+
+                    continue;
+                }
+
                 $current_version = $table_versions[ $table->get_table_slug() ];
 
                 if ( empty( $new_version ) || empty( $current_version ) ) {
@@ -109,7 +160,7 @@ final class Database_Manager {
                     continue;
                 }
 
-                $table->create();
+                $table->create( $current_version, $this->record_migration_for( $table ) );
 
                 $table_versions[ $table->get_table_slug() ] = $new_version;
                 $did_upgrade                                = true;

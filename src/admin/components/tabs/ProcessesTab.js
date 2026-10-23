@@ -35,7 +35,7 @@ function ProcessesTab(props) {
         icon: () => <Dashicon icon="warning" />,
         status: __('Cancelled', 'pressidium-performance'),
         initialOpen: true,
-      }
+      };
     }
 
     if (isPaused) {
@@ -43,7 +43,7 @@ function ProcessesTab(props) {
         icon: () => <Dashicon icon="controls-pause" />,
         status: __('Paused', 'pressidium-performance'),
         initialOpen: true,
-      }
+      };
     }
 
     if (isProcessing) {
@@ -51,7 +51,7 @@ function ProcessesTab(props) {
         icon: () => <Dashicon icon="controls-play" />,
         status: __('Processing', 'pressidium-performance'),
         initialOpen: true,
-      }
+      };
     }
 
     if (isQueued) {
@@ -59,15 +59,15 @@ function ProcessesTab(props) {
         icon: () => <Dashicon icon="clock" />,
         status: __('Queued', 'pressidium-performance'),
         initialOpen: true,
-      }
+      };
     }
 
     return {
       icon: () => <Dashicon icon="warning" />,
       status: __('Unknown status', 'pressidium-performance'),
       initialOpen: false,
-    }
-  }
+    };
+  };
 
   const updateProcesses = async () => {
     setIsFetching(true);
@@ -95,12 +95,12 @@ function ProcessesTab(props) {
       if (interval !== null) {
         clearInterval(interval);
       }
-    }
+    };
   }, []);
 
   const hasActiveProcesses = useMemo(
     () => processes.filter((process) => process.is_active).length > 0,
-    [processes]
+    [processes],
   );
 
   if (!hasActiveProcesses) {
@@ -147,7 +147,7 @@ function ProcessesTab(props) {
           items,
         } = process;
 
-        const { icon: Icon, status, initialOpen} = getStatus({
+        const { icon: Icon, status, initialOpen } = getStatus({
           isCancelled,
           isPaused,
           isProcessing,
@@ -163,13 +163,13 @@ function ProcessesTab(props) {
               <Flex
                 direction="column"
                 gap={4}
-                style={{width: '100%'}}
+                style={{ width: '100%' }}
               >
                 <FlexItem>
                   <Flex
                     direction="column"
                     gap={4}
-                    style={{width: '100%'}}
+                    style={{ width: '100%' }}
                   >
                     <FlexItem>
                       <Flex justify="flex-start">
@@ -197,12 +197,11 @@ function ProcessesTab(props) {
                               }
                             }}
                             disabled={isCancelled}
-                            style={{paddingRight: '10px'}}
+                            style={{ paddingRight: '10px' }}
                           >
                             {isPaused
                               ? __('Resume', 'pressidium-performance')
-                              : __('Pause', 'pressidium-performance')
-                            }
+                              : __('Pause', 'pressidium-performance')}
                           </Button>
                         </FlexItem>
                         <FlexItem>
@@ -212,7 +211,7 @@ function ProcessesTab(props) {
                             icon={() => (<Dashicon icon="trash" />)}
                             onClick={() => cancelBackgroundProcess(action)}
                             disabled={isCancelled}
-                            style={{paddingRight: '10px'}}
+                            style={{ paddingRight: '10px' }}
                           >
                             {__('Cancel', 'pressidium-performance')}
                           </Button>

@@ -35,9 +35,9 @@ final class Optimization_Record {
     private string $optimized_uri;
 
     /**
-     * @var string Hash of the file.
+     * @var string Hash of the original file's contents.
      */
-    private string $hash;
+    private string $content_hash;
 
     /**
      * @var int Original size of the file.
@@ -48,6 +48,11 @@ final class Optimization_Record {
      * @var int Optimized size of the file.
      */
     private int $optimized_size;
+
+    /**
+     * @var ?string Hash the original file was validated against, if any.
+     */
+    private ?string $sri_hash = null;
 
     /**
      * @var string Created_at timestamp.
@@ -127,23 +132,23 @@ final class Optimization_Record {
     }
 
     /**
-     * Return the hash of the file.
+     * Return the hash of the original file's contents.
      *
      * @return string
      */
-    public function get_hash(): string {
-        return $this->hash;
+    public function get_content_hash(): string {
+        return $this->content_hash;
     }
 
     /**
-     * Set the hash of the file.
+     * Set the hash of the original file's contents.
      *
-     * @param string $hash
+     * @param string $content_hash
      *
      * @return $this
      */
-    public function set_hash( string $hash ): Optimization_Record {
-        $this->hash = $hash;
+    public function set_content_hash( string $content_hash ): Optimization_Record {
+        $this->content_hash = $content_hash;
 
         return $this; // chainable
     }
@@ -188,6 +193,32 @@ final class Optimization_Record {
      */
     public function set_optimized_size( int $optimized_size ): Optimization_Record {
         $this->optimized_size = $optimized_size;
+
+        return $this; // chainable
+    }
+
+    /**
+     * Return the hash the original file was validated against.
+     *
+     * Formatted as `<algorithm>-<base64_hash>`. This is the single hash of the
+     * `integrity` attribute that the original contents matched, not the entire
+     * attribute.
+     *
+     * @return ?string
+     */
+    public function get_sri_hash(): ?string {
+        return $this->sri_hash;
+    }
+
+    /**
+     * Set the hash the original file was validated against.
+     *
+     * @param ?string $sri_hash
+     *
+     * @return $this
+     */
+    public function set_sri_hash( ?string $sri_hash ): Optimization_Record {
+        $this->sri_hash = $sri_hash;
 
         return $this; // chainable
     }

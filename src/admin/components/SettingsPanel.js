@@ -21,13 +21,9 @@ import {
   help as HelpIcon,
   people as PeopleIcon,
   starFilled as StarIcon,
-} from '@wordpress/icons'
+} from '@wordpress/icons';
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
-
-import {
-  pressidium as PressidiumIcon,
-} from './icons';
 
 import { useBeforeunload } from 'react-beforeunload';
 
@@ -37,15 +33,19 @@ import Panel from 'components/Panel';
 import Footer from 'components/Footer';
 
 import OverviewTab from 'components/tabs/OverviewTab';
+import EdgeTab from 'components/tabs/EdgeTab';
+import ImageOptimizationTab from 'components/tabs/ImageOptimizationTab';
 import MinificationTab from 'components/tabs/MinificationTab';
 import ConcatenationTab from 'components/tabs/ConcatenationTab';
-import ImageOptimizationTab from 'components/tabs/ImageOptimizationTab';
 import ProcessesTab from 'components/tabs/ProcessesTab';
 import LogsTab from 'components/tabs/LogsTab';
 import AboutTab from 'components/tabs/AboutTab';
 
 import SettingsContext from 'store/context';
 import * as ActionTypes from 'store/actionTypes';
+import {
+  pressidium as PressidiumIcon,
+} from './icons';
 
 function SettingsPanel() {
   const [isFetching, setIsFetching] = useState(false);
@@ -63,7 +63,9 @@ function SettingsPanel() {
     pressidium: 'https://pressidium.com/free-trial/?utm_source=ppplugin&utm_medium=metabox&utm_campaign=wpplugins',
   };
 
-  const appendNotice = useCallback(({ message, status, id = null, allowHTML = false }) => {
+  const appendNotice = useCallback(({
+    message, status, id = null, allowHTML = false,
+  }) => {
     setNotices((prevNotices) => {
       const noticeExists = prevNotices.find((notice) => notice.id === id);
 
@@ -615,7 +617,7 @@ function SettingsPanel() {
         id: 'not-retaining-original-images-warning',
         message: __('Heads up! Your current setting will <strong>delete</strong> the original image files after optimization. That saves space, but that action <strong>cannot be undone</strong>. Make sure you have a backup just in case you need the original files later.', 'pressidium-performance'),
         allowHTML: true,
-      }
+      },
     );
   }, [state.imageOptimization.keepOriginalFiles]);
 
@@ -627,19 +629,22 @@ function SettingsPanel() {
       {
         id: 'debug-mode-enabled-warning',
         message: __('Debug mode is enabled. This generates verbose log output on every request and may affect performance. It should only be enabled while actively troubleshooting an issue.', 'pressidium-performance'),
-      }
+      },
     );
   }, [state.logging.debugMode]);
 
   useEffect(() => {
-    const shouldShowNotice = !pressidiumPerfAdminDetails.has_page_cache;
+    const hasPageCache = pressidiumPerfAdminDetails.has_page_cache;
+    const isPressidiumPlatform = pressidiumPerfAdminDetails.is_pressidium_platform;
+
+    const shouldShowNotice = !hasPageCache && !isPressidiumPlatform;
 
     handleConditionalNotice(
       shouldShowNotice,
       {
         id: 'not-page-cache-warning',
         message: __('This plugin performs best with page caching enabled. We recommend activating it via your hosting provider or a caching plugin.', 'pressidium-performance'),
-      }
+      },
     );
   }, [pressidiumPerfAdminDetails.has_page_cache]);
 
@@ -673,13 +678,13 @@ function SettingsPanel() {
 
     // Find candidate elements (`Ariakit.Tab` renders `role="tab"` and also has `aria-controls`)
     const candidates = Array.from(
-      root.querySelectorAll('[role="tab"], [aria-controls]')
+      root.querySelectorAll('[role="tab"], [aria-controls]'),
     );
 
     const match = candidates.find((el) => {
-      const ac = el.getAttribute( 'aria-controls' );
+      const ac = el.getAttribute('aria-controls');
 
-      if (ac && ac.endsWith(`-${ tabName }-view`)) {
+      if (ac && ac.endsWith(`-${tabName}-view`)) {
         return true;
       }
 
@@ -702,7 +707,9 @@ function SettingsPanel() {
 
   return (
     <>
-      {notices.map(({ message, status, id, allowHTML = false }) => (
+      {notices.map(({
+        message, status, id, allowHTML = false,
+      }) => (
         <Notice
           onRemove={() => onDismissNotice(id)}
           status={status}
@@ -726,6 +733,12 @@ function SettingsPanel() {
                   title: __('Overview', 'pressidium-performance'),
                   className: 'tab-overview',
                   Component: OverviewTab,
+                },
+                {
+                  name: 'edge',
+                  title: __('Pressidium EDGE', 'pressidium-performance'),
+                  className: 'tab-edge',
+                  Component: EdgeTab,
                 },
                 {
                   name: 'image-optimization',
@@ -770,6 +783,15 @@ function SettingsPanel() {
                   overview: {
                     setActiveTab,
                   },
+                  edge: {
+                    appendNotice,
+                  },
+                  minification: {
+                    appendNotice,
+                  },
+                  concatenation: {
+                    appendNotice,
+                  },
                   processes: {
                     processes,
                     fetchBackgroundProcesses,
@@ -804,7 +826,7 @@ function SettingsPanel() {
         </FlexItem>
         <FlexItem
           className="pressidium-hide-on-xl"
-          style={{ maxWidth: '300px' }}
+          style={{ maxWidth: '300px', flexShrink: 0 }}
         >
           <Flex direction="column">
             <FlexItem>
@@ -907,7 +929,7 @@ function SettingsPanel() {
         </FlexItem>
       </Flex>
     </>
-  )
+  );
 }
 
 export default SettingsPanel;

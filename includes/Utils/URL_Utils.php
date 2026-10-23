@@ -52,6 +52,69 @@ final class URL_Utils {
     }
 
     /**
+     * Return the host of the given URL.
+     *
+     * @param string $url URL to extract the host from.
+     *
+     * @return ?string Lowercase host, or `null` if the URL does not have one
+     *                 (e.g. because it's a relative URL).
+     */
+    public static function get_host( string $url ): ?string {
+        $host = wp_parse_url( self::normalize_url( $url ), PHP_URL_HOST );
+
+        if ( ! is_string( $host ) || $host === '' ) {
+            return null;
+        }
+
+        return strtolower( $host );
+    }
+
+    /**
+     * Normalize the given value to a hostname.
+     *
+     * @param mixed $host Hostname, or a URL to extract the hostname from.
+     *
+     * @return ?string Lowercase hostname, or `null` if we could not determine one.
+     */
+    public static function normalize_host( $host ): ?string {
+        if ( ! is_string( $host ) ) {
+            // Not a string, cannot normalize
+            return null;
+        }
+
+        $host = trim( $host );
+
+        if ( str_contains( $host, '/' ) ) {
+            // Be forgiving and accept a full URL in place of a hostname
+            return self::get_host( $host );
+        }
+
+        if ( empty( $host ) ) {
+            return null;
+        }
+
+        return strtolower( $host );
+    }
+
+    /**
+     * Return the hosts this site serves its own assets from.
+     *
+     * A site does not necessarily serve everything from a single host. WordPress may live
+     * under a different host than the front-end (e.g. when it's installed in its own
+     * directory), and `wp-content` may be served from somewhere else entirely.
+     *
+     * @return string[] Lowercase hostnames.
+     */
+    public static function get_site_hosts(): array {
+        $hosts = array_map(
+            array( self::class, 'normalize_host' ),
+            array( home_url(), site_url(), content_url() )
+        );
+
+        return Array_Utils::dedupe_values( array_filter( $hosts ) );
+    }
+
+    /**
      * Whether the given value is a valid URL of this site.
      *
      * @param string $value

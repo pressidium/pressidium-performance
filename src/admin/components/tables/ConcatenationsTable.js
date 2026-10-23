@@ -10,7 +10,7 @@ import Table, {
   Header,
   Row,
   Column,
-  Pagination
+  Pagination,
 } from 'components/Table';
 
 const LineWrapColumn = styled(Column)`

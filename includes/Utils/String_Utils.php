@@ -55,6 +55,56 @@ final class String_Utils {
         return $str;
     }
 
+    /**
+     * Prepend the given prefix.
+     *
+     * Will only prepend the given prefix if it doesn't already exist,
+     * preventing double prefixing the given string.
+     *
+     * @since 1.1.0
+     *
+     * @param string $string What to prepend the given prefix to.
+     * @param string $prefix Prefix to prepend.
+     *
+     * @return string String with prefix prepended.
+     */
+    public static function prefix_it( string $string, string $prefix ): string {
+        return str_starts_with( $string, $prefix ) ? $string : $prefix . $string;
+    }
+
+    /**
+     * Append the given suffix.
+     *
+     * Will only append the given suffix if it doesn't already exist,
+     * preventing double suffixing the given string.
+     *
+     * @since 1.1.0
+     *
+     * @param string $string What to append the given suffix to.
+     * @param string $suffix Suffix to append.
+     *
+     * @return string String with suffix appended.
+     */
+    public static function suffix_it( string $string, string $suffix ): string {
+        return str_ends_with( $string, $suffix ) ? $string : $string . $suffix;
+    }
+
+    /**
+     * Prepend a leading slash.
+     *
+     * Will only prepend a leading slash if it doesn't already exist,
+     * preventing double slashing the given string.
+     *
+     * @since 1.1.0
+     *
+     * @param string $string What to add the leading slash to.
+     *
+     * @return string String with leading slash added.
+     */
+    public static function leading_slash_it( string $string ): string {
+        return self::prefix_it( $string, '/' );
+    }
+
 
     /**
      * Return the given string with the leading slash removed (if any).
@@ -67,6 +117,22 @@ final class String_Utils {
      */
     public static function unleading_slash_it( string $value ): string {
         return self::strip_prefix( '/', $value );
+    }
+
+    /**
+     * Append a trailing slash.
+     *
+     * Will only append a trailing slash if it doesn't already exist,
+     * preventing double slashing the given string.
+     *
+     * @since 1.1.0
+     *
+     * @param string $string What to add the trailing slash to.
+     *
+     * @return string String with trailing slash added
+     */
+    public static function trailing_slash_it( string $string ): string {
+        return self::suffix_it( $string, '/' );
     }
 
     /**

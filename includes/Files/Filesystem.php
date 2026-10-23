@@ -102,6 +102,164 @@ final class Filesystem {
     }
 
     /**
+     * Flatten the given recursive `dirlist()` result into a map of relative paths.
+     *
+     * @param array  $files  Associative array of file information, as returned by `dirlist()`.
+     * @param string $prefix Path of the directory holding these entries, relative to the root of the walk.
+     *
+     * @return array<string, int> Map of relative file paths to their last modified timestamps.
+     */
+    private function flatten_dirlist( array $files, string $prefix = '' ): array {
+        $flattened = array();
+
+        foreach ( $files as $file_info ) {
+            $name          = $file_info['name'];
+            $relative_path = $prefix === '' ? $name : $prefix . '/' . $name;
+
+            if ( $file_info['type'] === 'd' ) {
+                if ( is_array( $file_info['files'] ?? null ) ) {
+                    $flattened = array_merge(
+                        $flattened,
+                        $this->flatten_dirlist( $file_info['files'], $relative_path )
+                    );
+                }
+
+                continue;
+            }
+
+            $flattened[ $relative_path ] = (int) ( $file_info['lastmodunix'] ?? 0 );
+        }
+
+        return $flattened;
+    }
+
+    /**
+     * Return every file in the given directory and all its subdirectories.
+     *
+     * @param string $dir_path Path to the directory to walk.
+     *
+     * @return array<string, int> Map of relative file paths to their last modified timestamps.
+     */
+    public function list_files_recursive( string $dir_path ): array {
+        global $wp_filesystem;
+
+        $files = $wp_filesystem->dirlist( $dir_path, false, true );
+
+        if ( ! is_array( $files ) ) {
+            return array();
+        }
+
+        return $this->flatten_dirlist( $files );
+    }
+
+    /**
+     * Delete the empty subdirectories of the given directory.
+     *
+     * @param string $dir_path      Path to the directory to prune.
+     * @param int    $deleted_count Running count of the directories deleted so far.
+     *
+     * @return bool Whether the given directory is now empty.
+     */
+    private function prune_empty_dirs_within( string $dir_path, int &$deleted_count ): bool {
+        global $wp_filesystem;
+
+        $entries = $wp_filesystem->dirlist( $dir_path );
+
+        if ( ! is_array( $entries ) ) {
+            return false;
+        }
+
+        $is_empty = true;
+
+        foreach ( $entries as $entry ) {
+            if ( $entry['type'] !== 'd' ) {
+                $is_empty = false;
+                continue;
+            }
+
+            $child_path = $this->join( $dir_path, $entry['name'] );
+
+            // Pass the deleted count by reference so it can be updated in the recursive calls
+            if ( ! $this->prune_empty_dirs_within( $child_path, $deleted_count ) ) {
+                $is_empty = false;
+                continue;
+            }
+
+            if ( ! $wp_filesystem->rmdir( $child_path ) ) {
+                $is_empty = false;
+                continue;
+            }
+
+            $deleted_count += 1;
+        }
+
+        return $is_empty;
+    }
+
+    /**
+     * Delete the empty subdirectories of the given directory.
+     *
+     * @param string $dir_path Path to the directory to prune.
+     *
+     * @return int Number of directories deleted.
+     */
+    public function prune_empty_dirs( string $dir_path ): int {
+        $deleted_count = 0;
+
+        // Pass the deleted count by reference so it can be updated in the recursive calls
+        $this->prune_empty_dirs_within( $dir_path, $deleted_count );
+
+        return $deleted_count;
+    }
+
+    /**
+     * Return the number of files in the given recursive `dirlist()` result.
+     *
+     * Directory entries hold their own contents under a `files` key,
+     * so we have to walk into them to reach every file.
+     *
+     * @param array $files Associative array of file information, as returned by `dirlist()`.
+     *
+     * @return int Number of files.
+     */
+    private function count_files_in_dirlist( array $files ): int {
+        $count = 0;
+
+        foreach ( $files as $file_info ) {
+            if ( $file_info['type'] === 'd' ) {
+                $count += is_array( $file_info['files'] ?? null )
+                    ? $this->count_files_in_dirlist( $file_info['files'] )
+                    : 0;
+
+                continue;
+            }
+
+            $count += 1;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Return the number of files in the given directory and all its subdirectories.
+     *
+     * @param string $dir_path Path to the directory to count files in.
+     *
+     * @return int Number of files. `0` if the directory does not exist or could not be listed.
+     */
+    public function count_files( string $dir_path ): int {
+        global $wp_filesystem;
+
+        $files = $wp_filesystem->dirlist( $dir_path, false, true );
+
+        if ( ! is_array( $files ) ) {
+            return 0;
+        }
+
+        return $this->count_files_in_dirlist( $files );
+    }
+
+    /**
      * Read the entire file at the given path.
      *
      * @throws Filesystem_Exception If the file could not be read.
@@ -195,6 +353,23 @@ final class Filesystem {
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         return file_put_contents( $file_path, $file_contents, FILE_APPEND );
+    }
+
+    /**
+     * Move the file at the given path to the given destination, replacing it if it exists.
+     *
+     * This method uses the built-in `rename()` function, which is atomic, while
+     * `WP_Filesystem::move()` is not (it deletes the destination before moving
+     * the source).
+     *
+     * @param string $source_path      Absolute path to the file to move.
+     * @param string $destination_path Absolute path to move the file to.
+     *
+     * @return bool Whether the file was moved.
+     */
+    public function move( string $source_path, string $destination_path ): bool {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+        return rename( $source_path, $destination_path );
     }
 
     /**

@@ -63,6 +63,13 @@ abstract class WP_Background_Process extends WP_Async_Request {
     protected int $start_time = 0;
 
     /**
+     * Value of the lock held by this process (`<expires at>|<token>`), or `null` if it holds none.
+     *
+     * @var ?string
+     */
+    private ?string $lock_value = null;
+
+    /**
      * Cron_hook_identifier
      *
      * @var string
@@ -463,7 +470,7 @@ abstract class WP_Background_Process extends WP_Async_Request {
      * @return bool
      */
     protected function is_queue_empty(): bool {
-        return empty( $this->get_batch() );
+        return $this->get_batch() === null;
     }
 
     /**
@@ -482,17 +489,58 @@ abstract class WP_Background_Process extends WP_Async_Request {
     }
 
     /**
+     * Return the name of the option that holds the process lock.
+     *
+     * @return string
+     */
+    protected function get_lock_name(): string {
+        return $this->identifier . '_process_lock';
+    }
+
+    /**
+     * Return the table that holds the process lock.
+     *
+     * The lock has to be taken with a single atomic query, which needs the unique
+     * key on `option_name` of an options table (`sitemeta` has no such key), so
+     * on multisite the options table of the main site is used.
+     *
+     * @return string
+     */
+    private function get_lock_table(): string {
+        global $wpdb;
+
+        return is_multisite() ? $wpdb->get_blog_prefix( get_main_site_id() ) . 'options' : $wpdb->options;
+    }
+
+    /**
+     * Return the expiry timestamp of a lock value.
+     *
+     * @param string $lock_value Lock value (`<expires at>|<token>`).
+     *
+     * @return int
+     */
+    private function get_lock_expiry( string $lock_value ): int {
+        return (int) strtok( $lock_value, '|' );
+    }
+
+    /**
      * Whether the process is currently running.
      *
      * @return bool
      */
     public function is_processing(): bool {
-        if ( get_site_transient( $this->identifier . '_process_lock' ) ) {
-            // Process already running
-            return true;
-        }
+        global $wpdb;
 
-        return false;
+        $lock_table = $this->get_lock_table();
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $lock_value = $wpdb->get_var(
+            $wpdb->prepare( "SELECT option_value FROM {$lock_table} WHERE option_name = %s", $this->get_lock_name() )
+        );
+        // phpcs:enable
+
+        // Process already running, unless its lock has expired
+        return is_string( $lock_value ) && $this->get_lock_expiry( $lock_value ) > time();
     }
 
     /**
@@ -502,11 +550,21 @@ abstract class WP_Background_Process extends WP_Async_Request {
      * Override if applicable, but the duration should be greater than that
      * defined in the time_exceeded() method.
      *
+     * Taking the lock is atomic: it is inserted with `INSERT IGNORE` (so only one of any
+     * concurrent requests creates it), or taken over with a conditional `UPDATE` once it
+     * has expired (its process died without releasing it). Checking for a lock and then
+     * setting it in separate queries would let concurrent requests all get through, and
+     * process the same batches in parallel.
+     *
+     * A process that already holds the lock may call this again to extend it.
+     *
      * @param bool $reset_start_time Optional, default true.
      *
-     * @return void
+     * @return bool Whether this process holds the lock.
      */
-    public function lock_process( bool $reset_start_time = true ): void {
+    public function lock_process( bool $reset_start_time = true ): bool {
+        global $wpdb;
+
         if ( $reset_start_time ) {
             // Set start time of current process
             $this->start_time = time();
@@ -518,8 +576,40 @@ abstract class WP_Background_Process extends WP_Async_Request {
 
         $lock_duration = apply_filters( $this->identifier . '_queue_lock_time', $lock_duration );
 
-        $microtime = microtime();
-        $locked    = set_site_transient( $this->identifier . '_process_lock', $microtime, $lock_duration );
+        $now        = time();
+        $lock_value = ( $now + (int) $lock_duration ) . '|' . wp_generate_uuid4();
+        $lock_table = $this->get_lock_table();
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $inserted = $wpdb->query(
+            $wpdb->prepare(
+                "INSERT IGNORE INTO {$lock_table} (option_name, option_value, autoload) VALUES (%s, %s, 'off')",
+                $this->get_lock_name(),
+                $lock_value
+            )
+        );
+
+        $locked = $inserted === 1;
+
+        if ( ! $locked ) {
+            // The lock exists, take it over only if it is ours, or it has expired
+            $updated = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE {$lock_table} SET option_value = %s
+                    WHERE option_name = %s
+                    AND ( option_value = %s OR CAST( SUBSTRING_INDEX( option_value, '|', 1 ) AS UNSIGNED ) <= %d )",
+                    $lock_value,
+                    $this->get_lock_name(),
+                    (string) $this->lock_value,
+                    $now
+                )
+            );
+
+            $locked = $updated === 1;
+        }
+        // phpcs:enable
+
+        $this->lock_value = $locked ? $lock_value : null;
 
         /**
          * Action to note whether the background process managed to create its lock.
@@ -528,17 +618,75 @@ abstract class WP_Background_Process extends WP_Async_Request {
          * process should be allowed to run the same task until the lock is released.
          *
          * @param bool $locked Whether the lock was successfully created.
-         * @param string $microtime Microtime string value used for the lock.
+         * @param string $lock_value Value used for the lock (`<expires at>|<token>`).
          * @param int $lock_duration Max number of seconds that the lock will live for.
          * @param string $chain_id Current background process chain ID.
          */
         do_action(
             $this->identifier . '_process_locked',
             $locked,
-            $microtime,
+            $lock_value,
             $lock_duration,
             $this->get_chain_id()
         );
+
+        return $locked;
+    }
+
+    /**
+     * Extend the lock this process holds.
+     *
+     * Only the existing lock row is updated, so a lock that expired and was taken over by
+     * another process, or that was deleted (e.g. when clearing the process), is never taken
+     * back or re-created. Once the lock is lost, the queue belongs to someone else.
+     *
+     * @return bool Whether this process still holds the lock.
+     */
+    private function refresh_lock(): bool {
+        global $wpdb;
+
+        if ( $this->lock_value === null ) {
+            return false;
+        }
+
+        $lock_duration = ( property_exists( $this, 'queue_lock_time' ) )
+            ? $this->queue_lock_time
+            : 60; // 1 minute
+
+        $lock_duration = apply_filters( $this->identifier . '_queue_lock_time', $lock_duration );
+
+        $token      = (string) strstr( $this->lock_value, '|' );
+        $lock_value = ( time() + (int) $lock_duration ) . $token;
+        $lock_table = $this->get_lock_table();
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        if ( $lock_value === $this->lock_value ) {
+            // Same expiry as before (same second), nothing to extend: just confirm the lock is still ours
+            $current = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT option_value FROM {$lock_table} WHERE option_name = %s",
+                    $this->get_lock_name()
+                )
+            );
+
+            $held = $current === $this->lock_value;
+        } else {
+            $updated = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE {$lock_table} SET option_value = %s WHERE option_name = %s AND option_value = %s",
+                    $lock_value,
+                    $this->get_lock_name(),
+                    $this->lock_value
+                )
+            );
+
+            $held = $updated === 1;
+        }
+        // phpcs:enable
+
+        $this->lock_value = $held ? $lock_value : null;
+
+        return $held;
     }
 
     /**
@@ -549,7 +697,26 @@ abstract class WP_Background_Process extends WP_Async_Request {
      * @return WP_Background_Process
      */
     protected function unlock_process(): WP_Background_Process {
-        $unlocked = delete_site_transient( $this->identifier . '_process_lock' );
+        global $wpdb;
+
+        $unlocked = false;
+
+        if ( $this->lock_value !== null ) {
+            $lock_table = $this->get_lock_table();
+
+            // Only release our own lock, never one another process took over after ours expired
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $unlocked = (bool) $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$lock_table} WHERE option_name = %s AND option_value = %s",
+                    $this->get_lock_name(),
+                    $this->lock_value
+                )
+            );
+            // phpcs:enable
+
+            $this->lock_value = null;
+        }
 
         /**
          * Action to note whether the background process managed to release its lock.
@@ -568,15 +735,15 @@ abstract class WP_Background_Process extends WP_Async_Request {
     /**
      * Return batch.
      *
-     * @return stdClass Return the first batch of queued items.
+     * @return ?stdClass The first batch of queued items, or `null` if the queue is empty.
      */
-    protected function get_batch() {
+    protected function get_batch(): ?stdClass {
         return array_reduce(
             $this->get_batches( 1 ),
             static function ( $carry, $batch ) {
                 return $batch;
             },
-            array()
+            null
         );
     }
 
@@ -657,7 +824,11 @@ abstract class WP_Background_Process extends WP_Async_Request {
      * within server memory and time limit constraints.
      */
     protected function handle(): void {
-        $this->lock_process();
+        if ( ! $this->lock_process() ) {
+            // Another request got the lock first and is processing the queue
+            $this->maybe_wp_die();
+            return;
+        }
 
         /**
          * Number of seconds to sleep between batches. Defaults to 0 seconds, minimum 0.
@@ -678,8 +849,24 @@ abstract class WP_Background_Process extends WP_Async_Request {
         do {
             $batch = $this->get_batch();
 
+            if ( $batch === null ) {
+                // The queue was emptied (e.g. cleared) after it was checked
+                break;
+            }
+
             foreach ( $batch->data as $key => $value ) {
                 $task = $this->task( $value );
+
+                /*
+                 * The lock expires after a fixed time, so extend it after every item. If it
+                 * cannot be extended, it expired during the task and another process took it
+                 * over (or the process was cleared): that process owns the queue now, so
+                 * persist nothing and stop.
+                 */
+                if ( ! $this->refresh_lock() ) {
+                    $this->maybe_wp_die();
+                    return;
+                }
 
                 if ( $task !== false ) {
                     $batch->data[ $key ] = $task;
@@ -707,13 +894,33 @@ abstract class WP_Background_Process extends WP_Async_Request {
             }
         } while ( ! $this->is_queue_empty() && $this->should_continue() );
 
-        $this->unlock_process();
+        if ( $this->is_cancelled() ) {
+            /*
+             * Cancel requested while processing: drop the queue while still holding the lock,
+             * so whoever is waiting for it to be released (e.g. when clearing everything the
+             * process produced) finds nothing left to process. Completing the process now
+             * would publish the results of a run that was asked to stop.
+             */
+            $this->clear_scheduled_event();
+            $this->delete_all();
+            $this->unlock_process();
+
+            $this->maybe_wp_die();
+            return;
+        }
 
         // Start next batch or complete process
         if ( ! $this->is_queue_empty() ) {
+            $this->unlock_process();
             $this->dispatch();
-        } else {
+        } elseif ( $this->refresh_lock() ) {
+            /*
+             * Complete while still holding the lock, so that releasing it means the process
+             * is done writing (completing may publish what the run produced). If the lock
+             * was lost meanwhile, the process that took it over completes instead.
+             */
             $this->complete();
+            $this->unlock_process();
         }
 
         $this->maybe_wp_die();

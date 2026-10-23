@@ -13,6 +13,7 @@ use Pressidium\WP\Performance\Files\File;
 use Pressidium\WP\Performance\Files\File_Reader;
 use Pressidium\WP\Performance\Files\File_Writer;
 use Pressidium\WP\Performance\URL_Builder;
+use Pressidium\WP\Performance\SRI_Validator;
 use Pressidium\WP\Performance\Optimizations\Minification\Minification_Payload;
 use Pressidium\WP\Performance\Optimizations\Optimization_Record;
 use Pressidium\WP\Performance\Database\Tables\Optimizations_Table;
@@ -56,6 +57,7 @@ final class Minify_Process extends Background_Process {
      * @param URL_Builder         $url_builder         An instance of `URL_Builder`.
      * @param Minifier            $minifier            An instance of `Minifier`.
      * @param Optimizations_Table $optimizations_table An instance of `Optimizations_Table`.
+     * @param SRI_Validator       $sri_validator       An instance of `SRI_Validator`.
      */
     public function __construct(
         protected readonly Logger $logger,
@@ -64,6 +66,7 @@ final class Minify_Process extends Background_Process {
         protected readonly URL_Builder $url_builder,
         protected readonly Minifier $minifier,
         protected readonly Optimizations_Table $optimizations_table,
+        protected readonly SRI_Validator $sri_validator,
     ) {
         parent::__construct();
     }
@@ -83,14 +86,20 @@ final class Minify_Process extends Background_Process {
      * @throws Minification_Exception If the file could not be minified.
      * @throws Filesystem_Exception   If the file could not be written.
      *
-     * @param File $file File to minify.
+     * @param File    $file     File to minify.
+     * @param ?string $sri_hash Hash we validated the file against, if any.
      *
      * @return void
      */
-    private function minify_file( File $file ): void {
+    private function minify_file( File $file, ?string $sri_hash = null ): void {
         // Minify file
         $this->logger->debug( "[{$this->action}] Minifying file..." );
         $minified_file = $this->minifier->minify( $file );
+
+        if ( $minified_file === null ) {
+            $this->logger->debug( "[{$this->action}] File no longer needs minifying, skipping..." );
+            return;
+        }
 
         // Save the minified file
         $this->logger->debug( "[{$this->action}] Saving minified file..." );
@@ -98,7 +107,7 @@ final class Minify_Process extends Background_Process {
 
         // Store minified file info in the database
         $this->logger->debug( "[{$this->action}] Storing minified file info in the database..." );
-        $this->logger->debug( "[{$this->action}] Original file hash: {$file->get_hash()}" );
+        $this->logger->debug( "[{$this->action}] Original file hash: {$file->get_content_hash()}" );
 
         // Build the optimized URI
         $optimized_uri = $this->url_builder->build_url(
@@ -111,12 +120,22 @@ final class Minify_Process extends Background_Process {
         $optimization_record
             ->set_original_uri( $file->get_url() )
             ->set_optimized_uri( $optimized_uri )
-            ->set_hash( $file->get_hash() )
+            ->set_content_hash( $file->get_content_hash() )
             ->set_original_size( $file->get_size_in_bytes() )
-            ->set_optimized_size( $minified_file->get_size_in_bytes() );
+            ->set_optimized_size( $minified_file->get_size_in_bytes() )
+            ->set_sri_hash( $sri_hash );
 
         try {
-            $this->optimizations_table->set_optimization_record( $optimization_record );
+            $was_stored = $this->optimizations_table->set_optimization_record( $optimization_record );
+
+            if ( ! $was_stored ) {
+                $this->logger->error(
+                    sprintf( '[%s] Could not store the optimization record for: %s',
+                        esc_html( $this->action ),
+                        esc_url( $file->get_url() )
+                    )
+                );
+            }
         } catch ( Exception $exception ) {
             $this->logger->log_exception( $exception );
         }
@@ -145,22 +164,50 @@ final class Minify_Process extends Background_Process {
             return false;
         }
 
-        $file_uri = $item->get_file_uri();
-        $post_id  = $item->get_post_id();
-
-        $file = $this->file_reader->read_remote( $file_uri );
-
-        $this->logger->debug(
-            sprintf( '[%s] Processing %s in the background...',
-                esc_html( $this->action ),
-                esc_url( $file->get_url() )
-            )
-        );
+        $file_uri   = $item->get_file_uri();
+        $post_id    = $item->get_post_id();
+        $sri_hashes = $item->get_sri_hashes();
 
         try {
-            $this->minify_file( $file );
+            $file = $this->file_reader->read_remote( $file_uri );
+
+            $this->logger->debug(
+                sprintf( '[%s] Processing %s in the background...',
+                    esc_html( $this->action ),
+                    esc_url( $file->get_url() )
+                )
+            );
+
+            $sri_hash = null;
+
+            if ( ! empty( $sri_hashes ) ) {
+                // We only need to store the one hash the file actually matched
+                $sri_hash = $this->sri_validator->get_matching_hash( $file, $sri_hashes );
+
+                if ( $sri_hash === null ) {
+                    /*
+                     * The file doesn't match the integrity metadata of the tag that referenced it.
+                     * We intentionally record nothing here, so that the original tag is left alone.
+                     */
+                    $this->logger->warning(
+                        sprintf( '[%s] SRI validation failed for file: %s, removing it from the queue.',
+                            esc_html( $this->action ),
+                            esc_url( $file_uri )
+                        )
+                    );
+
+                    return false;
+                }
+            }
+
+            $this->minify_file( $file, $sri_hash );
         } catch ( Minification_Exception | Filesystem_Exception $exception ) {
-            $this->logger->error( sprintf( '[%s] Could not minify file.', esc_html( $this->action ) ) );
+            $this->logger->error(
+                sprintf( '[%s] Could not minify file: %s',
+                    esc_html( $this->action ),
+                    esc_url( $file_uri )
+                )
+            );
             $this->logger->log_exception( $exception );
         }
 
@@ -203,8 +250,13 @@ final class Minify_Process extends Background_Process {
         $items      = array();
 
         foreach ( $next_batch->data as $item ) {
+            if ( ! ( $item instanceof Minification_Payload ) ) {
+                // Queued item is not valid, skip it
+                continue;
+            }
+
             try {
-                $file = $this->file_reader->read_remote( $item );
+                $file = $this->file_reader->read_remote( $item->get_file_uri() );
             } catch ( Filesystem_Exception $exception ) {
                 continue;
             }

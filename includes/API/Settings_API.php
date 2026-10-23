@@ -56,16 +56,20 @@ class Settings_API extends API {
                     'required'   => array(
                         'minifyJS',
                         'minifyCSS',
+                        'sameOriginOnly',
                         'exclusions',
                     ),
                     'properties' => array(
-                        'minifyJS'   => array(
+                        'minifyJS'       => array(
                             'type' => 'boolean',
                         ),
-                        'minifyCSS'  => array(
+                        'minifyCSS'      => array(
                             'type' => 'boolean',
                         ),
-                        'exclusions' => array(
+                        'sameOriginOnly' => array(
+                            'type' => 'boolean',
+                        ),
+                        'exclusions'     => array(
                             'type'       => 'object',
                             'required'   => array(
                                 'js',
@@ -117,6 +121,7 @@ class Settings_API extends API {
                     'required'   => array(
                         'concatenateJS',
                         'concatenateCSS',
+                        'sameOriginOnly',
                         'exclusions',
                     ),
                     'properties' => array(
@@ -126,7 +131,10 @@ class Settings_API extends API {
                         'concatenateCSS' => array(
                             'type' => 'boolean',
                         ),
-                        'exclusions' => array(
+                        'sameOriginOnly' => array(
+                            'type' => 'boolean',
+                        ),
+                        'exclusions'     => array(
                             'type'       => 'object',
                             'required'   => array(
                                 'js',

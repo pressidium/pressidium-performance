@@ -1,4 +1,5 @@
 import * as ActionTypes from './actionTypes';
+import initialState from './initialState';
 
 function settingsReducer(state, action) {
   switch (action.type) {
@@ -6,6 +7,11 @@ function settingsReducer(state, action) {
       return {
         ...state,
         ...action.payload,
+        // Settings stored before an option was introduced don't have it yet, fall back to its default
+        concatenation: {
+          ...initialState.concatenation,
+          ...(action.payload?.concatenation ?? state.concatenation),
+        },
       };
 
     case ActionTypes.SET_MINIFICATION_SETTING:
@@ -194,6 +200,80 @@ function settingsReducer(state, action) {
         imageOptimization: {
           ...state.imageOptimization,
           [action.payload.key]: action.payload.value,
+        },
+      };
+
+    case ActionTypes.ADD_CACHE_TAG_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          cacheTagsToPurge: [
+            ...state.edge.cacheTagsToPurge,
+            '',
+          ],
+        },
+      };
+
+    case ActionTypes.UPDATE_CACHE_TAG_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          cacheTagsToPurge: [
+            ...state.edge.cacheTagsToPurge.slice(0, action.payload.index),
+            action.payload.value,
+            ...state.edge.cacheTagsToPurge.slice(action.payload.index + 1),
+          ],
+        },
+      };
+
+    case ActionTypes.DELETE_CACHE_TAG_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          cacheTagsToPurge: [
+            ...state.edge.cacheTagsToPurge.slice(0, action.payload.index),
+            ...state.edge.cacheTagsToPurge.slice(action.payload.index + 1),
+          ],
+        },
+      };
+
+    case ActionTypes.ADD_URI_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          urisToPurge: [
+            ...state.edge.urisToPurge,
+            '',
+          ],
+        },
+      };
+
+    case ActionTypes.UPDATE_URI_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          urisToPurge: [
+            ...state.edge.urisToPurge.slice(0, action.payload.index),
+            action.payload.value,
+            ...state.edge.urisToPurge.slice(action.payload.index + 1),
+          ],
+        },
+      };
+
+    case ActionTypes.DELETE_URI_TO_PURGE:
+      return {
+        ...state,
+        edge: {
+          ...state.edge,
+          urisToPurge: [
+            ...state.edge.urisToPurge.slice(0, action.payload.index),
+            ...state.edge.urisToPurge.slice(action.payload.index + 1),
+          ],
         },
       };
 

@@ -17,3 +17,9 @@ phpmd.xml
 phpstan.neon
 README.md
 webpack.config.js
+/tests
+/bin
+/docs
+/test-theme
+phpunit.xml.dist
+.phpunit.result.cache

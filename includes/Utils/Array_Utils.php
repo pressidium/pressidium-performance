@@ -143,4 +143,15 @@ final class Array_Utils {
         return empty( array_diff( $keys, array_keys( $arr ) ) );
     }
 
+    /**
+     * Remove duplicate values from the given array and reindex it.
+     *
+     * @param array $arr Array to remove duplicate values from.
+     *
+     * @return array
+     */
+    public static function dedupe_values( array $arr ): array {
+        return array_values( array_unique( $arr ) );
+    }
+
 }

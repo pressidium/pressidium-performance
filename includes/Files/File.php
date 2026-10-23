@@ -9,7 +9,6 @@
 namespace Pressidium\WP\Performance\Files;
 
 use Pressidium\WP\Performance\Logging\Logger;
-use Pressidium\WP\Performance\Utils\WP_Utils;
 use Pressidium\WP\Performance\Utils\URL_Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,9 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class File {
 
     /**
-     * @var string File hash.
+     * @var string Hash of the file contents.
      */
-    private string $hash;
+    private string $content_hash;
 
     /**
      * @var string URL of the file.
@@ -136,48 +135,16 @@ final class File {
     }
 
     /**
-     * Compute and return the hash of this file.
+     * Return the hash of the contents of this file.
      *
      * @return string
      */
-    private function compute_hash(): string {
-        $location = ! empty( $this->path ) ? $this->path : $this->url;
-
-        if ( WP_Utils::is_local_or_development_env() ) {
-            // Workaround to work in local or development environments without verifying the SSL certificate
-            stream_context_set_default(
-                array(
-                    'ssl' => array(
-                        'verify_peer'      => false,
-                        'verify_peer_name' => false,
-                    ),
-                )
-            );
-
-            if ( URL_Utils::is_url( $location ) ) {
-                $location = URL_Utils::normalize_url( $location );
-            }
-
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-            $contents = file_get_contents( $location );
-
-            return md5( $contents );
+    public function get_content_hash(): string {
+        if ( ! isset( $this->content_hash ) ) {
+            $this->content_hash = md5( $this->contents );
         }
 
-        return md5_file( $location );
-    }
-
-    /**
-     * Return the hash of this file.
-     *
-     * @return string
-     */
-    public function get_hash(): string {
-        if ( ! isset( $this->hash ) ) {
-            $this->hash = $this->compute_hash();
-        }
-
-        return $this->hash;
+        return $this->content_hash;
     }
 
 }
