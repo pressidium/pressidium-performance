@@ -3,7 +3,7 @@
  * Plugin Name: Pressidium Performance
  * Plugin URI: https://pressidium.com/open-source/performance-plugin/
  * Description: Speed up your WordPress site, improve Core Web Vitals and enhance user experience with one-click image optimization, CSS & JavaScript minification.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Pressidium®
  * Author URI: https://pressidium.com/
  * Text Domain: pressidium-performance
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function setup_constants(): void {
     if ( ! defined( 'Pressidium\WP\Performance\VERSION' ) ) {
-        define( 'Pressidium\WP\Performance\VERSION', '1.1.0' );
+        define( 'Pressidium\WP\Performance\VERSION', '1.2.0' );
     }
 
     if ( ! defined( 'Pressidium\WP\Performance\PLUGIN_DIR' ) ) {
@@ -188,6 +188,26 @@ function activate_plugin(): void {
 }
 
 /**
+ * Clean up when the plugin is deactivated.
+ *
+ * Cancels any background process that is still running. Their workers run
+ * through `admin-ajax.php`, which stops responding the moment the plugin is
+ * deactivated, so a queue left behind can never complete. It would keep reporting
+ * itself as active and block every run after the plugin is activated again.
+ *
+ * Settings and collected data are deliberately left untouched. We should not
+ * clear them when the plugin is deactivated, we only do when the plugin is uninstalled.
+ *
+ * @return void
+ */
+function deactivate_plugin(): void {
+    require_once __DIR__ . '/includes/cleanup.php';
+
+    pressidium_performance_clear_background_processes();
+    pressidium_performance_clear_cron_jobs();
+}
+
+/**
  * Initialize the plugin.
  *
  * @return void
@@ -217,4 +237,5 @@ function init_plugin(): void {
 }
 
 register_activation_hook( __FILE__, __NAMESPACE__ . '\activate_plugin' );
+register_deactivation_hook( __FILE__, __NAMESPACE__ . '\deactivate_plugin' );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\init_plugin' );

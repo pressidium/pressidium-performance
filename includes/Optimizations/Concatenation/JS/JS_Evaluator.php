@@ -13,6 +13,7 @@
 namespace Pressidium\WP\Performance\Optimizations\Concatenation\JS;
 
 use Pressidium\WP\Performance\Dependencies\Peast\Peast;
+use Pressidium\WP\Performance\Dependencies\Peast\Traverser;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\Program;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\ExpressionStatement;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\EmptyStatement;
@@ -26,6 +27,11 @@ use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\MemberExpression;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\FunctionExpression;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\ArrowFunctionExpression;
 use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\Expression;
+use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\VariableDeclaration;
+use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\FunctionDeclaration;
+use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\ClassDeclaration;
+use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\Function_;
+use Pressidium\WP\Performance\Dependencies\Peast\Syntax\Node\Class_;
 
 use Throwable;
 
@@ -108,6 +114,73 @@ class JS_Evaluator {
         }
 
         return $this->is_immediately_invoked_expression( $statement->getExpression() );
+    }
+
+    /**
+     * Whether the program declares globals that would be lost when run via an indirect `eval`.
+     *
+     * @return bool
+     */
+    public function has_declarations_lost_in_eval(): bool {
+        foreach ( $this->ast->getBody() as $statement ) {
+            if ( $statement instanceof ClassDeclaration ) {
+                return true;
+            }
+
+            if ( $statement instanceof VariableDeclaration && $statement->getKind() !== VariableDeclaration::KIND_VAR ) {
+                return true;
+            }
+        }
+
+        if ( ! $this->is_strict() ) {
+            return false;
+        }
+
+        // In strict mode, `var` and `function` declarations are lost as well
+        $has_var_scoped_declarations = false;
+
+        $this->ast->traverse(
+            function ( $node ) use ( &$has_var_scoped_declarations ) {
+                $is_var_declaration = $node instanceof VariableDeclaration && $node->getKind() === VariableDeclaration::KIND_VAR;
+
+                if ( $node instanceof FunctionDeclaration || $is_var_declaration ) {
+                    $has_var_scoped_declarations = true;
+                    return Traverser::STOP_TRAVERSING;
+                }
+
+                if ( $node instanceof Function_ || $node instanceof Class_ ) {
+                    // Declarations in nested functions (and class methods) are scoped to them
+                    return Traverser::DONT_TRAVERSE_CHILD_NODES;
+                }
+
+                return null;
+            }
+        );
+
+        return $has_var_scoped_declarations;
+    }
+
+    /**
+     * Whether the program is in strict mode, i.e. its directive prologue contains a 'use strict' directive.
+     *
+     * @link https://tc39.es/ecma262/#sec-directive-prologues-and-the-use-strict-directive
+     *
+     * @return bool
+     */
+    private function is_strict(): bool {
+        foreach ( $this->ast->getBody() as $statement ) {
+            if ( ! $statement instanceof ExpressionStatement || ! $statement->getExpression() instanceof StringLiteral ) {
+                // End of the directive prologue
+                return false;
+            }
+
+            // The directive must be exactly 'use strict' or "use strict", without any escape sequences
+            if ( substr( $statement->getExpression()->getRaw(), 1, -1 ) === 'use strict' ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

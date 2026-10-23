@@ -12,6 +12,7 @@ use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Files\File;
 use Pressidium\WP\Performance\Exceptions\Minification_Exception;
 use Pressidium\WP\Performance\Optimizations\Minification\File_Minification_Evaluator;
+use Pressidium\WP\Performance\Optimizations\Minification\Minified_Path_Builder;
 use Pressidium\WP\Performance\Optimizations\Minification\Minifier as Minifier_Interface;
 
 use Pressidium\WP\Performance\Dependencies\MatthiasMullie\Minify;
@@ -34,51 +35,26 @@ final class Minifier implements Minifier_Interface {
      *
      * @param Logger                      $logger                      An instance of `Logger`.
      * @param File_Minification_Evaluator $file_minification_evaluator An instance of `File_Minification_Evaluator`.
+     * @param Minified_Path_Builder       $minified_path_builder       An instance of `Minified_Path_Builder`.
      */
     public function __construct(
         protected readonly Logger $logger,
         protected readonly File_Minification_Evaluator $file_minification_evaluator,
+        protected readonly Minified_Path_Builder $minified_path_builder,
     ) {}
 
     /**
-     * Return the relative path of the given file URL.
+     * Minify the contents of the given file.
      *
-     * @throws Minification_Exception If the URL could not be parsed.
-     *
-     * @param string $file_url File URL.
-     *
-     * @return string Relative path.
-     */
-    private function get_relative_path( string $file_url ): string {
-        $components = wp_parse_url( $file_url );
-
-        if ( ! is_array( $components ) || ! isset( $components['host'] ) || ! isset( $components['path'] ) ) {
-            throw new Minification_Exception( 'Could not minify file: URL could not be parsed' );
-        }
-
-        $url_host = $components['host'];
-        $url_path = $components['path'];
-
-        $relative_path = ltrim( $url_path, '/' );
-        $relative_path = $url_host . '/' . $relative_path;
-
-        return str_replace( '/', DIRECTORY_SEPARATOR, $relative_path );
-    }
-
-    /**
-     * Minify the given file.
+     * Unlike `minify()`, this does not consult the evaluator.
      *
      * @throws Minification_Exception If the file could not be minified.
      *
      * @param File $file File to minify.
      *
-     * @return File Minified file.
+     * @return string Minified contents.
      */
-    public function minify( File $file ): File {
-        if ( ! $this->file_minification_evaluator->should_be_minified( $file ) ) {
-            return $file;
-        }
-
+    public function minify_contents( File $file ): string {
         try {
             $minifier = new Minify\JS();
             $minifier->add( $file->get_contents() );
@@ -89,10 +65,37 @@ final class Minifier implements Minifier_Interface {
             );
         }
 
+        /*
+         * The input is never empty here, as callers reject empty files, so empty
+         * output means the minifier failed rather than that there was nothing to minify.
+         */
+        if ( ! is_string( $minified_contents ) || trim( $minified_contents ) === '' ) {
+            throw new Minification_Exception(
+                sprintf( 'Minification produced empty output: %s', esc_url( $file->get_url() ) )
+            );
+        }
+
+        return $minified_contents;
+    }
+
+    /**
+     * Minify the given file.
+     *
+     * @throws Minification_Exception If the file could not be minified.
+     *
+     * @param File $file File to minify.
+     *
+     * @return ?File Minified file or `null` if the file should not be minified.
+     */
+    public function minify( File $file ): ?File {
+        if ( ! $this->file_minification_evaluator->should_be_minified( $file ) ) {
+            return null;
+        }
+
         return new File(
             $this->logger,
-            $this->get_relative_path( $file->get_url() ),
-            $minified_contents
+            $this->minified_path_builder->build_relative_path( $file->get_url(), $file->get_content_hash() ),
+            $this->minify_contents( $file )
         );
     }
 

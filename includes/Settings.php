@@ -48,9 +48,10 @@ class Settings {
     private function get_default_values(): array {
         return array(
             'minification'      => array(
-                'minifyJS'   => true,
-                'minifyCSS'  => true,
-                'exclusions' => array(
+                'minifyJS'       => false,
+                'minifyCSS'      => false,
+                'sameOriginOnly' => true,
+                'exclusions'     => array(
                     'js'  => array(),
                     'css' => array(),
                 ),
@@ -58,6 +59,7 @@ class Settings {
             'concatenation'     => array(
                 'concatenateJS'  => false,
                 'concatenateCSS' => false,
+                'sameOriginOnly' => true,
                 'exclusions'     => array(
                     'js'  => array(),
                     'css' => array(),

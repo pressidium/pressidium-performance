@@ -49,7 +49,8 @@ class Code_Pruner {
      * @return Code_Pruner
      */
     public function prune_block_comments(): Code_Pruner {
-        $pruned_code = preg_replace( '/^\s*\/\*.*?\*\/\s*$/is', '', $this->code );
+        // Every block comment, wherever it sits
+        $pruned_code = preg_replace( '/\/\*.*?\*\//s', '', $this->code );
 
         if ( ! is_string( $pruned_code ) ) {
             return $this;
@@ -66,7 +67,8 @@ class Code_Pruner {
      * @return Code_Pruner
      */
     public function prune_inline_comments(): Code_Pruner {
-        $pruned_code = preg_replace( '/^\s*\/\/.*?$/is', '', $this->code );
+        // Whole-line comments only (`m`: per line), so a `//` inside a string (e.g. a URL) is left alone
+        $pruned_code = preg_replace( '/^\s*\/\/.*$/m', '', $this->code );
 
         if ( ! is_string( $pruned_code ) ) {
             return $this;
@@ -83,7 +85,8 @@ class Code_Pruner {
      * @return Code_Pruner
      */
     public function prune_empty_lines(): Code_Pruner {
-        $pruned_code = preg_replace( '/^\s*$/m', '', $this->code );
+        // Drop whitespace-only lines together with their line break
+        $pruned_code = preg_replace( '/^[ \t]*\R/m', '', $this->code );
 
         if ( ! is_string( $pruned_code ) ) {
             return $this;

@@ -4,9 +4,9 @@ Plugin URI: https://pressidium.com/open-source/performance-plugin/
 Contributors: pressidium, overengineer
 Tags: performance, optimizations, image optimization, convert webp, convert avif
 Requires at least: 6.9
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 8.1
-Stable Tag: 1.1.0
+Stable Tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -160,6 +160,52 @@ If you have spotted any bugs, or would like to request additional features from 
 7. Monitor every optimization task running behind the scenes.
 
 == Changelog ==
+
+= 1.2.0: Oct 23, 2026 =
+
+* Integrate with Pressidium EDGE
+* Introduce a "Clear minified files" button to delete all minified files and their records
+* Introduce a "Clear concatenated files" button to delete all concatenated files and their records
+* Introduce an "Only minify assets from this site" option to leave third-party scripts and stylesheets untouched when minifying (enabled by default)
+* Introduce an "Only concatenate assets from this site" option to leave third-party scripts and stylesheets untouched when concatenating (enabled by default)
+* Improve background process lock handling to hold locks for the entire duration of a run
+* Expose the `pressidium_performance_concatenation_allowed_hosts` filter to allow concatenating assets from additional hosts
+* Expose the `pressidium_performance_concatenation_build_timeout` filter to adjust the number of seconds before a concatenated bundle build is considered stuck
+* Clear the Elementor cache and the Pressidium cache when image optimization completes
+* Exclude files that fail to be processed from concatenated bundles instead of dropping the entire bundle, and keep serving them through their original tags
+* Split concatenated stylesheets into segments at excluded stylesheets and `@import` rules to preserve the cascade order
+* Minify each file as it is concatenated instead of minifying the entire bundle
+* Run concatenated deferred scripts once the document has been parsed, in their original order, instead of at parse time
+* Exclude scripts that fail to parse or are not valid UTF-8 from concatenated bundles instead of crashing the concatenation process
+* Handle tags with an `integrity` attribute when minifying files, and improve how they are handled when concatenating files
+* Include the content hash in minified filenames so browsers and caches always fetch the latest version
+* Clean up minified files that are no longer referenced by any optimization record
+* Stop inlining small images and fonts as base64 data URIs when minifying CSS
+* Never match exclusion patterns that are invalid regular expressions
+* Convert plugin own assets from PNG to WebP to reduce their size
+* File minification is now disabled by default
+* Fix an issue where JavaScript minification skipped regular scripts and minified non-JavaScript scripts instead
+* Fix an issue where listing the items in the minification queue failed with a `TypeError`
+* Fix an issue where a failed asset fetch could stall the minification queue
+* Fix an issue where the body of an HTTP error response (e.g. a `404` page or a WAF challenge page) was minified or concatenated and served in place of the real asset
+* Fix an issue where empty minified files were stored
+* Fix an issue where local paths in `url()` and `@import` rules were not handled properly when minifying CSS
+* Fix an issue where fragment-only `url()` references (e.g. `url(#blur)`) were rewritten as relative paths when minifying CSS
+* Fix an issue where pruning comments while evaluating files for minification removed too much or too little code
+* Fix an issue where URLs longer than 255 characters could not be stored properly in the optimizations table
+* Fix an issue where database table schema changes were not applied to existing tables
+* Fix an issue where newly introduced database tables were not created when upgrading the plugin
+* Fix an issue where concatenation page mappings did not expire properly
+* Fix an issue where partially written concatenated bundles could be served before they were complete
+* Fix an issue where concurrent requests could build the same concatenated bundle at the same time
+* Fix an issue where a late concatenation run could overwrite or delete a concatenated bundle that was already published
+* Fix an issue where pages with the same stylesheets in a different order shared a concatenated bundle, breaking the cascade order of one of them
+* Fix an issue where `style` tags and stylesheets that are not concatenated lost their place in the cascade when placed between concatenated stylesheets
+* Fix an issue where top-level `var` and `function` declarations of concatenated scripts were not available as globals
+* Fix an issue where non-ASCII characters could get corrupted in concatenated scripts
+* Fix an issue where background processes and their state were left behind when the plugin was uninstalled
+* Fix an issue where options and transients were left behind when the plugin was uninstalled
+* Update “Tested up to” version to WordPress 7.1 to confirm compatibility
 
 = 1.1.0: Apr 30, 2026 =
 

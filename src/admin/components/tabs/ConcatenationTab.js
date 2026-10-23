@@ -5,14 +5,19 @@ import {
   PanelRow,
   ToggleControl,
   Notice,
+  Button,
+  Flex,
+  FlexItem,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 import {
   settings as SettingsIcon,
   brush as BrushIcon,
   code as CodeIcon,
   archive as ArchiveIcon,
+  tool as ToolIcon,
 } from '@wordpress/icons';
+import apiFetch from '@wordpress/api-fetch';
 
 import styled from 'styled-components';
 
@@ -21,6 +26,7 @@ import * as ActionTypes from 'store/actionTypes';
 
 import ConcatenationExclusionsTable from 'components/tables/exclusion/ConcatenationExclusionsTable';
 import ConcatenationsTable from 'components/tables/ConcatenationsTable';
+import ClearConcatenatedFilesModal from 'components/modals/ClearConcatenatedFilesModal';
 
 const StyledNotice = styled(Notice)`
   margin: 0 !important;
@@ -28,13 +34,25 @@ const StyledNotice = styled(Notice)`
   border-style: solid;
   border-color: #e0e0e0;
   border-bottom: none;
+  border-radius: 0;
   box-shadow: inset 4px 0 0 0 #f0b849;
 `;
 
 function ConcatenationTab(props) {
+  const { appendNotice } = props;
+
   const { state, dispatch } = useContext(SettingsContext);
 
   const [noticeDismissed, setNoticeDismissed] = useState(false);
+
+  const [isClearing, setIsClearing] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+
+  /*
+   * Bumped after a successful clear. It's used as the `key` of the concatenations
+   * table, so that bumping it remounts the table and resets its internal state.
+   */
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const onConcatenationSettingChange = useCallback((key, value) => {
     dispatch({
@@ -47,6 +65,76 @@ function ConcatenationTab(props) {
   }, []);
 
   const dismissNotice = useCallback(() => setNoticeDismissed(true), []);
+
+  const openClearModal = useCallback(() => setIsClearModalOpen(true), []);
+  const closeClearModal = useCallback(() => setIsClearModalOpen(false), []);
+
+  const clearConcatenatedFiles = useCallback(async () => {
+    setIsClearing(true);
+
+    const { concatenation_clear_route: route, nonce } = pressidiumPerfAdminDetails.api;
+
+    const options = {
+      path: route,
+      method: 'POST',
+      data: { nonce },
+    };
+
+    try {
+      const response = await apiFetch(options);
+
+      if ('success' in response && response.success) {
+        const filesDeleted = response.data?.files_deleted ?? 0;
+
+        if (filesDeleted === 0) {
+          appendNotice({
+            message: __('No concatenated files were found to clear.', 'pressidium-performance'),
+            status: 'info',
+            id: 'concatenation-clear-no-files',
+          });
+        } else {
+          appendNotice({
+            message: sprintf(
+              /* translators: %d: number of concatenated files that were deleted. */
+              _n(
+                'Cleared %d concatenated file.',
+                'Cleared %d concatenated files.',
+                filesDeleted,
+                'pressidium-performance',
+              ),
+              filesDeleted,
+            ),
+            status: 'success',
+            id: 'concatenation-clear-success',
+          });
+        }
+
+        setRefreshToken((previousToken) => previousToken + 1);
+      } else {
+        appendNotice({
+          message: __('Could not clear concatenated files.', 'pressidium-performance'),
+          status: 'error',
+          id: 'concatenation-clear-error',
+        });
+      }
+    } catch (error) {
+      if ('code' in error && error.code === 'invalid_nonce') {
+        appendNotice({
+          message: __('Could not pass security check.', 'pressidium-performance'),
+          status: 'error',
+          id: 'failed-security-check-error',
+        });
+      } else {
+        appendNotice({
+          message: __('Could not clear concatenated files.', 'pressidium-performance'),
+          status: 'error',
+          id: 'concatenation-clear-generic-error',
+        });
+      }
+    } finally {
+      setIsClearing(false);
+    }
+  }, [appendNotice]);
 
   return (
     <>
@@ -98,6 +186,17 @@ function ConcatenationTab(props) {
               onChange={(value) => onConcatenationSettingChange('concatenateCSS', value)}
             />
           </PanelRow>
+          <PanelRow>
+            <ToggleControl
+              label={__('Only concatenate assets from this site', 'pressidium-performance')}
+              help={state.concatenation.sameOriginOnly
+                ? __('Third-party scripts and stylesheets are left untouched', 'pressidium-performance')
+                : __('Will download, concatenate and self-host assets from other domains', 'pressidium-performance')}
+              checked={state.concatenation.sameOriginOnly}
+              className="pressidium-toggle-control"
+              onChange={(value) => onConcatenationSettingChange('sameOriginOnly', value)}
+            />
+          </PanelRow>
         </PanelBody>
 
         <PanelBody
@@ -126,7 +225,43 @@ function ConcatenationTab(props) {
           initialOpen
         >
           <PanelRow>
-            <ConcatenationsTable />
+            <ConcatenationsTable key={refreshToken} />
+          </PanelRow>
+        </PanelBody>
+
+        <PanelBody
+          title={__('Maintenance', 'pressidium-performance')}
+          icon={ToolIcon}
+          initialOpen
+        >
+          <PanelRow>
+            <Flex direction="column" gap={4} style={{ width: '100%' }}>
+              <FlexItem>
+                <p style={{ margin: 0 }}>
+                  {__('Clearing concatenated files deletes all concatenated files, their database records, and the page mappings pointing at them. Your files will be concatenated again as your pages are visited. Use this to resolve issues caused by stale or broken concatenated files.', 'pressidium-performance')}
+                </p>
+              </FlexItem>
+              <FlexItem>
+                <Flex justify="flex-start">
+                  <FlexItem>
+                    <Button
+                      variant="secondary"
+                      className="is-destructive"
+                      onClick={openClearModal}
+                      disabled={isClearing}
+                      isBusy={isClearing}
+                    >
+                      {__('Clear concatenated files', 'pressidium-performance')}
+                    </Button>
+                    <ClearConcatenatedFilesModal
+                      isOpen={isClearModalOpen}
+                      onClose={closeClearModal}
+                      clearConcatenatedFiles={clearConcatenatedFiles}
+                    />
+                  </FlexItem>
+                </Flex>
+              </FlexItem>
+            </Flex>
           </PanelRow>
         </PanelBody>
       </Panel>

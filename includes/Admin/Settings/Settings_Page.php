@@ -175,6 +175,85 @@ final class Settings_Page extends Page implements Actions, Filters {
     }
 
     /**
+     * Whether we are currently running on the Pressidium platform.
+     *
+     * @return bool
+     */
+    private function is_pressidium_platform(): bool {
+        return isset( $_SERVER['PRESSIDIUM_PLATFORM'] ) || getenv( 'PRESSIDIUM_PLATFORM' ) !== false;
+    }
+
+    /**
+     * Whether the platform EDGE is enabled for this site.
+     *
+     * Relies on the `Ninukis_Plugin` class, which is provided by Pressidium's mu-plugin.
+     *
+     * @return bool
+     */
+    private function is_platform_edge(): bool {
+        if ( ! class_exists( 'Ninukis_Plugin' ) ) {
+            // Not running on Pressidium, or the mu-plugin is not installed
+            return false;
+        }
+
+        if ( ! method_exists( 'Ninukis_Plugin', 'is_edge_caching_enabled' ) ) {
+            // The mu-plugin no longer provides that method
+            return false;
+        }
+
+        return (bool) \Ninukis_Plugin::is_edge_caching_enabled();
+    }
+
+    /**
+     * Return the Pressidium user ID for the current site, if available.
+     *
+     * @return int | null
+     */
+    private function get_pressidium_user_id(): int | null {
+        if ( ! defined( 'WP_NINUKIS_ACCOUNT' ) ) {
+            return null;
+        }
+
+        return intval( substr( \WP_NINUKIS_ACCOUNT, 1 ) );
+    }
+
+    /**
+     * Return the URL to the Pressidium dashboard page for upgrading to EDGE, if applicable.
+     *
+     * @return string | null
+     */
+    private function get_edge_upgrade_url(): string | null {
+        // Fallback URL to the Pressidium dashboard
+        $url = 'https://dashboard.pressidium.com/';
+
+        if ( ! $this->is_pressidium_platform() || $this->is_platform_edge() ) {
+            // Not running on Pressidium, or EDGE is already enabled, fall back to the dashboard URL
+            return $url;
+        }
+
+        $user_id = $this->get_pressidium_user_id();
+
+        if ( is_null( $user_id ) ) {
+            // Could not determine Pressidium user ID, fall back to the dashboard URL
+            return $url;
+        }
+
+        $url = sprintf(
+            'https://dashboard.pressidium.com/%s/pressidium-edge-upgrade',
+            (string) $user_id
+        );
+
+        return add_query_arg(
+            array(
+                'utm_source'   => 'ppplugin',
+                'utm_medium'   => 'edgetab',
+                'utm_campaign' => 'wpplugins',
+            ),
+            $url
+        );
+    }
+
+    /**
      * Enqueue scripts for the settings page.
      *
      * @return void
@@ -216,24 +295,36 @@ final class Settings_Page extends Page implements Actions, Filters {
             'performance-admin-script',
             'pressidiumPerfAdminDetails',
             array(
-                'domain'         => WP_Utils::get_domain(),
-                'assets'         => array(
-                    'icon'  => esc_url( PLUGIN_URL . 'assets/images/icon.png' ),
-                    'promo' => esc_url( PLUGIN_URL . 'assets/images/promo.png' ),
+                'domain'                 => WP_Utils::get_domain(),
+                'assets'                 => array(
+                    'icon'                 => esc_url( PLUGIN_URL . 'assets/images/icon.webp' ),
+                    'promo'                => esc_url( PLUGIN_URL . 'assets/images/promo.webp' ),
+                    'edge_hero'            => esc_url( PLUGIN_URL . 'assets/images/edge-hero.webp' ),
+                    'edge_hero_alt'        => esc_url( PLUGIN_URL . 'assets/images/edge-hero-alt.webp' ),
+                    'edge_logo'            => esc_url( PLUGIN_URL . 'assets/images/edge-logo.svg' ),
+                    'pressidium_edge_logo' => esc_url( PLUGIN_URL . 'assets/images/pressidium-edge-logo.svg' ),
                 ),
-                'api'            => array(
-                    'route'                   => 'pressidium-performance/v1/settings',
-                    'logs_route'              => 'pressidium-performance/v1/logs',
-                    'processes_route'         => 'pressidium-performance/v1/processes',
-                    'image_convert_route'     => 'pressidium-performance/v1/optimization/image/convert',
-                    'image_convert_all_route' => 'pressidium-performance/v1/optimization/image/convert-all',
-                    'image_revert_all_route'  => 'pressidium-performance/v1/optimization/image/revert-all',
-                    'minifications_route'     => 'pressidium-performance/v1/optimization/minification/minifications',
-                    'concatenations_route'    => 'pressidium-performance/v1/optimization/concatenation/concatenations',
-                    'stats_route'             => 'pressidium-performance/v1/optimization/stats',
-                    'nonce'                   => wp_create_nonce( 'pressidium_performance_rest' ),
+                'api'                    => array(
+                    'route'                      => 'pressidium-performance/v1/settings',
+                    'logs_route'                 => 'pressidium-performance/v1/logs',
+                    'processes_route'            => 'pressidium-performance/v1/processes',
+                    'image_convert_route'        => 'pressidium-performance/v1/optimization/image/convert',
+                    'image_convert_all_route'    => 'pressidium-performance/v1/optimization/image/convert-all',
+                    'image_revert_all_route'     => 'pressidium-performance/v1/optimization/image/revert-all',
+                    'minifications_route'        => 'pressidium-performance/v1/optimization/minification/minifications',
+                    'minification_clear_route'   => 'pressidium-performance/v1/optimization/minification/clear',
+                    'concatenations_route'       => 'pressidium-performance/v1/optimization/concatenation/concatenations',
+                    'concatenation_clear_route'  => 'pressidium-performance/v1/optimization/concatenation/clear',
+                    'stats_route'                => 'pressidium-performance/v1/optimization/stats',
+                    'edge_credentials_route'     => 'pressidium-performance/v1/edge/credentials',
+                    'edge_cache_purge_route'     => 'pressidium-performance/v1/edge/cache/purge',
+                    'edge_cache_purge_all_route' => 'pressidium-performance/v1/edge/cache/purge-all',
+                    'nonce'                      => wp_create_nonce( 'pressidium_performance_rest' ),
                 ),
-                'has_page_cache' => $this->has_page_cache(),
+                'has_page_cache'         => $this->has_page_cache(),
+                'is_pressidium_platform' => $this->is_pressidium_platform(),
+                'is_platform_edge'       => $this->is_platform_edge(),
+                'edge_upgrade_url'       => $this->get_edge_upgrade_url(),
             )
         );
     }

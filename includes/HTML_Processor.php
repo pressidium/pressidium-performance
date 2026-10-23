@@ -55,4 +55,67 @@ final class HTML_Processor extends WP_HTML_Tag_Processor {
         return parent::next_tag( $query );
     }
 
+    /**
+     * Return the expected SRI hashes from the `integrity` attribute of the current tag.
+     *
+     * @return ?array<string, string[]> Expected base64-encoded hashes, keyed by algorithm.
+     *                                  This is an associative array where the keys are the hashing algorithms
+     *                                  (e.g. `sha384`) and the values are arrays of expected base64-encoded
+     *                                  hashes for that algorithm (e.g. `['AbCdEf...', 'GhIjKl...']`).
+     */
+    public function get_sri_hashes(): ?array {
+        $integrity = $this->get_attribute( 'integrity' );
+
+        if ( empty( $integrity ) || ! is_string( $integrity ) ) {
+            // The `integrity` attribute is either not present, empty or malformed
+            return null;
+        }
+
+        /*
+         * The `integrity` attribute can contain multiple entries, separated by whitespace.
+         * Each entry is formatted as `<algorithm>-<base64_hash>`, e.g., `sha384-AbCdEf...`,
+         * optionally followed by a query string (e.g. `?foo=bar`).
+         */
+        $entries = preg_split( '/\s+/', trim( $integrity ), -1, PREG_SPLIT_NO_EMPTY );
+
+        if ( empty( $entries ) ) {
+            return null;
+        }
+
+        $metadata = array();
+
+        foreach ( $entries as $entry ) {
+            // Strip the optional `?<options>` suffix, leaving just the `<algorithm>-<hash>` pair
+            $entry = explode( '?', $entry, 2 )[0];
+
+            $separator_position = strpos( $entry, '-' );
+
+            if ( $separator_position === false ) {
+                // Not an `<algorithm>-<hash>` pair, skip it
+                continue;
+            }
+
+            $algorithm     = strtolower( substr( $entry, 0, $separator_position ) );
+            $expected_hash = substr( $entry, $separator_position + 1 );
+
+            if ( ! in_array( $algorithm, SRI_Validator::SUPPORTED_ALGORITHMS, true ) ) {
+                // Unsupported hashing algorithm, skip it
+                continue;
+            }
+
+            if ( empty( $expected_hash ) ) {
+                // Empty hash, skip it
+                continue;
+            }
+
+            $metadata[ $algorithm ][] = $expected_hash;
+        }
+
+        if ( empty( $metadata ) ) {
+            return null;
+        }
+
+        return $metadata;
+    }
+
 }

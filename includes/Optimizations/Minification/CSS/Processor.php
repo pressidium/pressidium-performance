@@ -19,6 +19,7 @@ use Pressidium\WP\Performance\Optimizations\Minification\File_Minification_Evalu
 use Pressidium\WP\Performance\Optimizations\Minification\Minification_Payload;
 use Pressidium\WP\Performance\Optimizations\Minification\Minification_Processor;
 use Pressidium\WP\Performance\Enumerations\HTML_Tag;
+use Pressidium\WP\Performance\SRI_Validator;
 
 use Pressidium\WP\Performance\Exceptions\Filesystem_Exception;
 use Pressidium\WP\Performance\URL_Builder;
@@ -50,6 +51,7 @@ final class Processor extends Minification_Processor {
      * @param URL_Builder                 $url_builder                 An instance of `URL_Builder`.
      * @param Minifier                    $minifier                    An instance of `Minifier`.
      * @param Optimizations_Table         $optimizations_table         An instance of `Optimizations_Table`.
+     * @param SRI_Validator               $sri_validator               An instance of `SRI_Validator`.
      */
     public function __construct(
         Options $options,
@@ -59,7 +61,8 @@ final class Processor extends Minification_Processor {
         File_Minification_Evaluator $file_minification_evaluator,
         URL_Builder $url_builder,
         Minifier $minifier,
-        Optimizations_Table $optimizations_table
+        Optimizations_Table $optimizations_table,
+        SRI_Validator $sri_validator
     ) {
         parent::__construct(
             $options,
@@ -69,7 +72,8 @@ final class Processor extends Minification_Processor {
             $file_minification_evaluator,
             $url_builder,
             $minifier,
-            $optimizations_table
+            $optimizations_table,
+            $sri_validator
         );
 
         // Initialize the minify background process
@@ -79,7 +83,8 @@ final class Processor extends Minification_Processor {
             $file_writer,
             $url_builder,
             $minifier,
-            $optimizations_table
+            $optimizations_table,
+            $sri_validator
         );
     }
 
@@ -95,11 +100,12 @@ final class Processor extends Minification_Processor {
     /**
      * Schedule the stylesheet at the given URI for minification if needed.
      *
-     * @param string $stylesheet_uri URI of the stylesheet to minify.
+     * @param string                   $stylesheet_uri URI of the stylesheet to minify.
+     * @param ?array<string, string[]> $sri_hashes     Integrity metadata of the `<link>` tag, if any.
      *
      * @return void
      */
-    private function maybe_schedule_stylesheet_for_minification( string $stylesheet_uri ): void {
+    private function maybe_schedule_stylesheet_for_minification( string $stylesheet_uri, ?array $sri_hashes ): void {
         try {
             if ( $this->minify_process->is_active() ) {
                 // A minification process is already active, bail early
@@ -128,7 +134,8 @@ final class Processor extends Minification_Processor {
             $this->minify_process->push_to_queue(
                 new Minification_Payload(
                     $file->get_url(),
-                    get_the_ID()
+                    get_the_ID(),
+                    $sri_hashes
                 )
             );
         } catch ( Filesystem_Exception $exception ) {
@@ -163,12 +170,41 @@ final class Processor extends Minification_Processor {
             return;
         }
 
+        if ( ! $this->file_minification_evaluator->is_allowed_origin( $href ) ) {
+            /*
+             * The stylesheet is served from a host whose assets we may not minify. Bail before we
+             * look up any optimization record, so that records created while third-party assets
+             * were still allowed stop being applied.
+             */
+            $this->logger->debug( "Stylesheet '{$href}' is not served from an allowed host, skipping..." );
+            return;
+        }
+
         $this->logger->debug( 'Parsing tag using the CSS minification processor...' );
+
+        $sri_hashes = $processor->get_sri_hashes();
 
         $optimization_record = $this->optimizations_table->get_optimization_record( $href );
 
+        if ( $optimization_record && $this->is_record_stale( $optimization_record, $sri_hashes ) ) {
+            /*
+             * The tag no longer lists the hash we validated the original stylesheet against, so
+             * the stylesheet it points to has most likely changed under the same URI.
+             *
+             * Drop the record, to avoid serving a stale minified copy and let the evaluator
+             * below schedule the stylesheet to be re-minified.
+             */
+            $this->logger->info(
+                "Integrity metadata of '{$href}' no longer lists the hash we validated it against, invalidating its optimization record..."
+            );
+
+            $this->optimizations_table->delete_optimization_record( $href );
+
+            $optimization_record = null;
+        }
+
         $this->logger->debug( "Maybe schedule stylesheet '{$href}' for minification..." );
-        $this->maybe_schedule_stylesheet_for_minification( $href );
+        $this->maybe_schedule_stylesheet_for_minification( $href, $sri_hashes );
 
         if ( ! $optimization_record ) {
             // There are no optimization records, bail early
@@ -178,6 +214,15 @@ final class Processor extends Minification_Processor {
 
         $this->logger->debug( "Replacing stylesheet '{$href}' with optimized version..." );
         $processor->set_attribute( 'href', $optimization_record->get_optimized_uri() );
+
+        if ( $sri_hashes !== null ) {
+            /*
+             * We have validated the original stylesheet against one of these hashes server-side, so
+             * we know we have minified the actual contents the tag asked for. We can safely drop
+             * the `integrity` attribute here.
+             */
+            $processor->remove_attribute( 'integrity' );
+        }
     }
 
     /**

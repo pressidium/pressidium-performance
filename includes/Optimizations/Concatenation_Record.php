@@ -45,6 +45,11 @@ final class Concatenation_Record {
     private bool $is_minified;
 
     /**
+     * @var bool Whether the bundle is complete. Bundles that are still being built are not ready.
+     */
+    private bool $is_ready = true;
+
+    /**
      * @var int Number of files that were concatenated.
      */
     private ?int $files_count = null;
@@ -176,6 +181,28 @@ final class Concatenation_Record {
      */
     public function set_is_minified( bool $is_minified ): Concatenation_Record {
         $this->is_minified = $is_minified;
+
+        return $this; // chainable
+    }
+
+    /**
+     * Return whether the bundle is complete.
+     *
+     * @return bool
+     */
+    public function get_is_ready(): bool {
+        return $this->is_ready;
+    }
+
+    /**
+     * Set whether the bundle is complete.
+     *
+     * @param bool $is_ready
+     *
+     * @return Concatenation_Record
+     */
+    public function set_is_ready( bool $is_ready ): Concatenation_Record {
+        $this->is_ready = $is_ready;
 
         return $this; // chainable
     }

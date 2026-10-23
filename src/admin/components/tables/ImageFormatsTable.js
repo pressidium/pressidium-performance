@@ -60,8 +60,8 @@ function ImageFormatsTable() {
                   className="pressidium-horizontal-radio"
                   disabled={!shouldOptimize}
                   options={[
-                    {label: __('WebP', 'pressidium-performance'), value: 'image/webp'},
-                    {label: __('AVIF', 'pressidium-performance'), value: 'image/avif'},
+                    { label: __('WebP', 'pressidium-performance'), value: 'image/webp' },
+                    { label: __('AVIF', 'pressidium-performance'), value: 'image/avif' },
                   ]}
                   onChange={(value) => onImageFormatSettingChange(mimeType, 'convertTo', value)}
                 />

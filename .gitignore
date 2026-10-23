@@ -352,6 +352,8 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Claude directory
+.claude/
 
 
 ### Project-specific ###
@@ -362,3 +364,5 @@ includes/classes/dependencies/**/*
 !includes/classes/dependencies/index.php
 includes/Dependencies/**/*
 !includes/Dependencies/index.php
+/.phpunit.result.cache
+/tests/phpunit/.uploads/

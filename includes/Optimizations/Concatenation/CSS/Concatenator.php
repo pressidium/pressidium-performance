@@ -10,6 +10,7 @@ namespace Pressidium\WP\Performance\Optimizations\Concatenation\CSS;
 
 use Pressidium\WP\Performance\Optimizations\Concatenation\Concatenator as Concatenator_Interface;
 
+use Pressidium\WP\Performance\Exceptions\Concatenation_Exception;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Files\File;
 use Pressidium\WP\Performance\Files\Filesystem;
@@ -45,30 +46,153 @@ final class Concatenator implements Concatenator_Interface {
     ) {}
 
     /**
-     * Merge the given files into a single file.
+     * Return the key of the given segment of the bundle with the given aggregated hash.
      *
-     * @param string $contents        File contents.
-     * @param string $type            File type.
-     * @param string $aggregated_hash Aggregated hash.
+     * A bundle is split into segments at the stylesheets that could not be included in it,
+     * so the order of the cascade is preserved. Each segment is concatenated to its own file,
+     * so its key can be passed wherever the key of a bundle file is expected.
      *
-     * @return string Concatenated file location.
+     * @param string $aggregated_hash Aggregated hash of the bundle.
+     * @param int    $segment         Segment index.
+     *
+     * @return string
      */
-    public function concatenate( string $contents, string $type, string $aggregated_hash ): string {
-        $dest_filename = $aggregated_hash . '.css';
-        $sub_dir       = Output_Directory::CONCATENATED->value;
-        $dest_path     = $this->filesystem->build_path( $sub_dir, $dest_filename );
+    public static function get_segment_key( string $aggregated_hash, int $segment ): string {
+        return "{$aggregated_hash}-{$segment}";
+    }
 
-        if ( ! $this->filesystem->exists( $dest_path ) ) {
-            $this->logger->debug( "[CSS_Concatenator] Creating concatenated file at {$dest_path}" );
-            $this->filesystem->create_file( $dest_path, $contents );
+    /**
+     * Return the directory that holds the concatenated files.
+     *
+     * All files of a bundle (i.e. all of its segments) live in this directory.
+     *
+     * @return string
+     */
+    public function get_bundle_directory(): string {
+        return $this->filesystem->build_path( Output_Directory::CONCATENATED->value );
+    }
 
-            return $dest_path;
+    /**
+     * Return the path of the concatenated file with the given key.
+     *
+     * @param string $key Key of the bundle file.
+     *
+     * @return string
+     */
+    private function get_bundle_path( string $key ): string {
+        return $this->filesystem->build_path(
+            Output_Directory::CONCATENATED->value,
+            $key . '.css'
+        );
+    }
+
+    /**
+     * Return the path of the partial file with the given key.
+     *
+     * @param string $key Key of the bundle file.
+     *
+     * @return string
+     */
+    private function get_partial_path( string $key ): string {
+        return $this->filesystem->build_path(
+            Output_Directory::CONCATENATED->value,
+            $key . self::PARTIAL_SUFFIX . '.css'
+        );
+    }
+
+    /**
+     * Append the given contents to the partial file of the bundle.
+     *
+     * @throws Concatenation_Exception If the contents could not be written.
+     *
+     * @param string $contents File contents.
+     * @param string $type     File type.
+     * @param string $key      Key of the bundle file.
+     *
+     * @return string Partial file location.
+     */
+    public function concatenate( string $contents, string $type, string $key ): string {
+        $partial_path = $this->get_partial_path( $key );
+
+        if ( ! $this->filesystem->exists( $partial_path ) ) {
+            $this->logger->debug( "[CSS_Concatenator] Creating partial concatenated file at {$partial_path}" );
+
+            if ( ! $this->filesystem->create_file( $partial_path, $contents ) ) {
+                throw new Concatenation_Exception(
+                    esc_html( "Could not create partial concatenated file at {$partial_path}" )
+                );
+            }
+
+            return $partial_path;
         }
 
-        $this->logger->debug( "[CSS_Concatenator] Appending to concatenated file at {$dest_path}" );
-        $this->filesystem->append( $dest_path, "\n" . $contents );
+        $this->logger->debug( "[CSS_Concatenator] Appending to partial concatenated file at {$partial_path}" );
+
+        if ( ! $this->filesystem->append( $partial_path, "\n" . $contents ) ) {
+            throw new Concatenation_Exception(
+                esc_html( "Could not append to partial concatenated file at {$partial_path}" )
+            );
+        }
+
+        return $partial_path;
+    }
+
+    /**
+     * Move the partial file of the bundle into place.
+     *
+     * @param string $key Key of the bundle file.
+     *
+     * @return ?string Concatenated file location, or `null` if the bundle could not be completed.
+     */
+    public function complete( string $key ): ?string {
+        $partial_path = $this->get_partial_path( $key );
+        $dest_path    = $this->get_bundle_path( $key );
+
+        if ( ! $this->filesystem->exists( $partial_path ) ) {
+            $this->logger->error( "[CSS_Concatenator] Could not find partial concatenated file at {$partial_path}" );
+            return null;
+        }
+
+        if ( ! $this->filesystem->move( $partial_path, $dest_path ) ) {
+            $this->logger->error( "[CSS_Concatenator] Could not move {$partial_path} to {$dest_path}" );
+            return null;
+        }
+
+        $this->logger->info( "[CSS_Concatenator] Completed concatenated file at {$dest_path}" );
 
         return $dest_path;
+    }
+
+    /**
+     * Delete the concatenated file of the bundle, if any.
+     *
+     * @param string $key Key of the bundle file.
+     *
+     * @return void
+     */
+    public function delete( string $key ): void {
+        $dest_path = $this->get_bundle_path( $key );
+
+        if ( $this->filesystem->exists( $dest_path ) ) {
+            $this->logger->debug( "[CSS_Concatenator] Deleting concatenated file at {$dest_path}" );
+            $this->filesystem->delete_file( $dest_path );
+        }
+    }
+
+    /**
+     * Delete the partial file of the bundle, if any.
+     *
+     * @param string $key Key of the bundle file.
+     *
+     * @return void
+     */
+    public function discard( string $key ): void {
+        $partial_path = $this->get_partial_path( $key );
+
+        if ( $this->filesystem->exists( $partial_path ) ) {
+            $this->logger->debug( "[CSS_Concatenator] Discarding partial concatenated file at {$partial_path}" );
+            $this->filesystem->delete_file( $partial_path );
+        }
     }
 
 }

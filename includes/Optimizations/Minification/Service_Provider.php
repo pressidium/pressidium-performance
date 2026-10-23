@@ -36,6 +36,9 @@ final class Service_Provider extends AbstractServiceProvider {
      * @var array
      */
     protected $provides = array(
+        'skip_cache',
+        'minified_path_builder',
+        'minification_cleaner',
         'file_minification_evaluator',
         'js_minification_processor',
         'css_minification_processor',
@@ -53,11 +56,27 @@ final class Service_Provider extends AbstractServiceProvider {
      * @return void
      */
     public function register(): void {
-        $this->getContainer()->add( 'file_minification_evaluator', File_Minification_Evaluator::class )
+        $this->getContainer()->add( 'skip_cache', Skip_Cache::class )
+             ->addArgument( 'logger' )
+             ->addArgument( 'transient' )
+             ->addArgument( 'options' );
+
+        $this->getContainer()->add( 'minified_path_builder', Minified_Path_Builder::class )
+             ->addArgument( 'url_builder' );
+
+        $this->getContainer()->add( 'minification_cleaner', Minification_Cleaner::class )
+             ->addArgument( 'logger' )
+             ->addArgument( 'filesystem' )
+             ->addArgument( 'optimizations_table' )
+             ->addArgument( 'skip_cache' )
+             ->addArgument( 'transient' );
+
+        $this->getContainer()->share( 'file_minification_evaluator', File_Minification_Evaluator::class )
              ->addArgument( 'logger' )
              ->addArgument( 'optimizations_table' )
              ->addArgument( 'settings' )
-             ->addArgument( 'transient' );
+             ->addArgument( 'skip_cache' )
+             ->addArgument( 'minified_path_builder' );
 
         $this->getContainer()->add( 'js_minification_processor', JS_Minification_Processor::class )
              ->addArgument( 'options' )
@@ -70,9 +89,11 @@ final class Service_Provider extends AbstractServiceProvider {
                  new JS_Minifier(
                      $this->getContainer()->get( 'logger' ),
                      $this->getContainer()->get( 'file_minification_evaluator' ),
+                     $this->getContainer()->get( 'minified_path_builder' ),
                  )
              )
-             ->addArgument( 'optimizations_table' );
+             ->addArgument( 'optimizations_table' )
+             ->addArgument( 'sri_validator' );
 
         $this->getContainer()->add( 'css_minification_processor', CSS_Minification_Processor::class )
              ->addArgument( 'options' )
@@ -85,9 +106,12 @@ final class Service_Provider extends AbstractServiceProvider {
                  new CSS_Minifier(
                      $this->getContainer()->get( 'logger' ),
                      $this->getContainer()->get( 'file_minification_evaluator' ),
+                     $this->getContainer()->get( 'filesystem' ),
+                     $this->getContainer()->get( 'minified_path_builder' ),
                  )
              )
-             ->addArgument( 'optimizations_table' );
+             ->addArgument( 'optimizations_table' )
+             ->addArgument( 'sri_validator' );
     }
 
 }

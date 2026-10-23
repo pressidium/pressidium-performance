@@ -1,0 +1,319 @@
+@import './montserrat';
+
+#pressidium-performance-root {
+  --pressidium-edge-background: #000000;
+  --pressidium-edge-text: #ffffff;
+  --pressidium-edge-text-muted: #e4e3e6;
+  --pressidium-edge-success: #22c55e;
+  --pressidium-edge-info: #60a5fa;
+
+  .pressidium-badge {
+    &--success-outline {
+      background-color: transparent;
+      color: #5b841b;
+      border: 1px solid #5b841b;
+    }
+  }
+
+  .pressidium-edge-hero.is-pressidium {
+    .pressidium-edge-hero {
+      &__image {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: inherit;
+        left: 0;
+        margin-top: 24%;
+      }
+
+      &__content {
+        position: relative;
+        z-index: 1;
+        padding: 40px 40px 64px 40px;
+        font-family: 'Montserrat', sans-serif;
+        color: var(--pressidium-edge-text);
+      }
+
+      &__section {
+        &--connected {
+          padding-bottom: 25%;
+        }
+
+        // First section below the hero, so it needs to clear the Earth image
+        &--first {
+          padding-top: 160px;
+        }
+      }
+
+      &__status {
+        &--top {
+          border-top: none;
+          border-bottom: 1px solid #e0e0e0;
+        }
+      }
+
+      &__actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 28px 0 0 0;
+
+        &--hero {
+          margin-top: 4%;
+        }
+      }
+
+      &__action {
+        --wp-components-color-accent: var(--pressidium-edge-text);
+        --wp-components-color-accent-darker-10: var(--pressidium-edge-text);
+        --wp-components-color-accent-darker-20: var(--pressidium-edge-text);
+        --wp-admin-theme-color: var(--pressidium-edge-text);
+        --wp-admin-theme-color-darker-10: var(--pressidium-edge-text);
+        --wp-admin-theme-color-darker-20: var(--pressidium-edge-text);
+
+        &--outline {
+          color: var(--pressidium-edge-text);
+          /* `!important` for the same reason as the focus state below */
+          box-shadow: inset 0 0 0 1px var(--pressidium-edge-text);
+          transition: background 200ms ease, box-shadow 200ms ease;
+
+          &:focus:not(:disabled) {
+            color: var(--pressidium-edge-text);
+            box-shadow: inset 0 0 0 1px var(--pressidium-edge-text);
+          }
+
+          &:hover:not(:disabled),
+          &:focus-visible:not(:disabled) {
+            color: var(--pressidium-edge-text);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow:
+              inset 0 0 0 1px var(--pressidium-edge-text),
+              0 0 20px rgba(255, 255, 255, 0.45),
+              0 0 48px rgba(96, 165, 250, 0.35);
+          }
+        }
+
+        &--light {
+          background: #ffffff;
+          color: #1e1e1e;
+          box-shadow: none;
+
+          &:hover:not(:disabled),
+          &:focus:not(:disabled) {
+            background: #f0f0f0;
+            color: #1e1e1e;
+          }
+        }
+      }
+    }
+  }
+
+  .pressidium-edge-hero {
+    padding: 16px;
+
+    &__wrapper {
+      background: var(--pressidium-edge-background);
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 1px;
+      position: relative;
+      max-width: 900px;
+    }
+
+    &__body {
+      position: relative;
+      container-type: inline-size;
+    }
+
+    &__image {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: left center;
+        display: block;
+      }
+    }
+
+    &__text {
+      position: relative;
+      z-index: 1;
+      padding: 40px 40px 36px 40px;
+      font-family: 'Montserrat', sans-serif;
+      max-width: 600px;
+    }
+
+    &__heading {
+      font-weight: 500;
+      font-size: 1.9rem;
+      color: var(--pressidium-edge-text);
+      line-height: 1.3;
+      margin: 0 0 4px 0;
+    }
+
+    &__heading-text {
+      margin: 0 0.3em 0 0;
+    }
+
+    &__logo {
+      display: inline-block;
+      height: 0.76em;
+      width: auto;
+      vertical-align: middle;
+      margin-top: -0.2em;
+    }
+
+    &__watermark {
+      position: absolute;
+      right: 40px;
+      bottom: 36px;
+      z-index: 1;
+
+      height: 1.3em;
+      width: auto;
+
+      pointer-events: none;
+
+      @container (max-width: 830px) {
+        position: relative;
+        right: auto;
+        bottom: auto;
+        display: block;
+        margin: 0 40px 36px auto;
+      }
+    }
+
+    &__meet {
+      display: inline-block;
+
+      font-size: 1.1rem;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 1rem;
+      letter-spacing: normal;
+      text-transform: none;
+      color: var(--pressidium-edge-text);
+    }
+
+    &__subtitle {
+      font-weight: 400;
+      font-size: 1rem;
+      color: var(--pressidium-edge-text);
+      margin: 0 0 36px 0;
+    }
+
+    &__description {
+      font-size: 0.875rem;
+      color: var(--pressidium-edge-text);
+      line-height: 1.6;
+      margin: 0;
+      max-width: 500px;
+    }
+
+    &__status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: #ffffff;
+      border-top: 1px solid #e0e0e0;
+
+      &-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      &-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--pressidium-edge-success);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #ffffff;
+      }
+
+      &-label {
+        font-weight: 600;
+        color: #000000;
+        font-size: 0.875rem;
+      }
+
+      &-sublabel {
+        color: #757575;
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+}
+
+.pressidium-edge-cache-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.pressidium-edge-cache-card {
+  &__icon-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  &__description {
+    font-size: 0.8rem;
+    color: #757575;
+    margin: 0 0 12px 0;
+  }
+}
+
+@media (max-width: 767px) {
+  #pressidium-performance-root {
+    .pressidium-edge-hero {
+      &__status {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+
+    .pressidium-edge-hero.is-pressidium {
+      .pressidium-edge-hero {
+        &__content {
+          padding: 24px 24px 48px 24px;
+        }
+
+        &__actions {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+    }
+  }
+
+  .pressidium-edge-cache-grid {
+    grid-template-columns: 1fr;
+  }
+}

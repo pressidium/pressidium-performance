@@ -25,10 +25,16 @@ final class Blueprint {
     private array $columns;
 
     /**
+     * @var array<string, string[]> Unique keys spanning one or more columns, keyed by name.
+     */
+    private array $unique_keys;
+
+    /**
      * Blueprint constructor.
      */
     public function __construct() {
-        $this->columns = array();
+        $this->columns     = array();
+        $this->unique_keys = array();
     }
 
     /**
@@ -63,6 +69,20 @@ final class Blueprint {
     }
 
     /**
+     * Create a new fixed-length string column.
+     *
+     * Equivalent to `CHAR` in MySQL.
+     *
+     * @param string $column_name Name of the column.
+     * @param int    $length      Length of the column.
+     *
+     * @return Column
+     */
+    public function char( string $column_name, int $length ): Column {
+        return $this->create_column( $column_name, 'CHAR', $length );
+    }
+
+    /**
      * Create a new text column.
      *
      * Equivalent to `TEXT` in MySQL.
@@ -73,6 +93,19 @@ final class Blueprint {
      */
     public function text( string $column_name ): Column {
         return $this->create_column( $column_name, 'TEXT' );
+    }
+
+    /**
+     * Create a new long text column.
+     *
+     * Equivalent to `LONGTEXT` in MySQL.
+     *
+     * @param string $column_name Name of the column.
+     *
+     * @return Column
+     */
+    public function longtext( string $column_name ): Column {
+        return $this->create_column( $column_name, 'LONGTEXT' );
     }
 
     /**
@@ -207,6 +240,37 @@ final class Blueprint {
     }
 
     /**
+     * Add a unique key spanning the given columns.
+     *
+     * Use `Column::unique()` instead for a unique key on a single column.
+     *
+     * @param string   $key_name Name of the key.
+     * @param string[] $columns  Names of the columns the key spans.
+     *
+     * @return void
+     */
+    public function unique_key( string $key_name, array $columns ): void {
+        $this->unique_keys[ $key_name ] = $columns;
+    }
+
+    /**
+     * Return the unique keys for the table's blueprint object.
+     *
+     * @link https://developer.wordpress.org/reference/functions/dbdelta/
+     *
+     * @return string[]
+     */
+    private function get_unique_keys(): array {
+        $unique_keys = array();
+
+        foreach ( $this->unique_keys as $key_name => $columns ) {
+            $unique_keys[] = sprintf( 'UNIQUE KEY %s (%s)', $key_name, implode( ',', $columns ) );
+        }
+
+        return $unique_keys;
+    }
+
+    /**
      * Return the primary key for the table's blueprint object.
      *
      * @link https://developer.wordpress.org/reference/functions/dbdelta/
@@ -256,6 +320,10 @@ final class Blueprint {
 
         if ( ! empty( $primary_key ) ) {
             $columns_sql .= ", \n{$primary_key}";
+        }
+
+        foreach ( $this->get_unique_keys() as $unique_key ) {
+            $columns_sql .= ", \n{$unique_key}";
         }
 
         return "CREATE TABLE {$table_name} (\n{$columns_sql}\n) {$charset_collate}";

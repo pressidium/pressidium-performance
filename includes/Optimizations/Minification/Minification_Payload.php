@@ -22,12 +22,14 @@ class Minification_Payload {
     /**
      * Minification_Payload constructor.
      *
-     * @param string    $file_uri URI of the file to be minified.
-     * @param int|false $post_id  Post ID to which the file to minify belong.
+     * @param string                   $file_uri   URI of the file to be minified.
+     * @param int|false                $post_id    Post ID to which the file to minify belong.
+     * @param ?array<string, string[]> $sri_hashes Integrity metadata of the file to be minified, if any.
      */
     public function __construct(
         private readonly string $file_uri,
-        private readonly int|false $post_id
+        private readonly int|false $post_id,
+        private readonly ?array $sri_hashes = null
     ) {}
 
     /**
@@ -46,6 +48,15 @@ class Minification_Payload {
      */
     public function get_post_id(): int|false {
         return $this->post_id;
+    }
+
+    /**
+     * Return the SRI hashes of the file to be minified, if any.
+     *
+     * @return ?array<string, string[]>
+     */
+    public function get_sri_hashes(): ?array {
+        return $this->sri_hashes ?? null;
     }
 
 }

@@ -64,7 +64,7 @@ function ImageOptimizationTab(props) {
     {
       value: 100,
       label: 'Lossless',
-    }
+    },
   ];
 
   return (

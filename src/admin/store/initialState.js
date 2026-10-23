@@ -1,7 +1,8 @@
 export default {
   minification: {
-    minifyJS: true,
-    minifyCSS: true,
+    minifyJS: false,
+    minifyCSS: false,
+    sameOriginOnly: true,
     exclusions: {
       js: [],
       css: [],
@@ -10,6 +11,7 @@ export default {
   concatenation: {
     concatenateJS: false,
     concatenateCSS: false,
+    sameOriginOnly: true,
     exclusions: {
       js: [],
       css: [],
@@ -55,6 +57,10 @@ export default {
     },
     quality: 75,
     exclusions: [],
+  },
+  edge: {
+    cacheTagsToPurge: [],
+    urisToPurge: [],
   },
   logging: {
     debugMode: false,
