@@ -44,7 +44,8 @@
         "coenjacobs/mozart": "^0.7.1"
     },
     "lint": "./vendor/squizlabs/php_codesniffer/bin/phpcs",
-    "phpstan": "./vendor/bin/phpstan -c phpstan.neon",
+    "phpmd": "./vendor/bin/phpmd includes text phpmd.xml",
+    "phpstan": "./vendor/bin/phpstan analyse -c phpstan.neon",
     "config": {
         "allow-plugins": {
             "phpstan/extension-installer": true,
@@ -73,7 +74,7 @@
     },
     "scripts": {
         "lint": "./vendor/squizlabs/php_codesniffer/bin/phpcs",
-        "phpstan": "./vendor/bin/phpstan -c phpstan.neon",
+        "phpstan": "./vendor/bin/phpstan analyse -c phpstan.neon",
         "post-install-cmd": [
             "\"vendor/bin/mozart\" compose",
             "composer dump-autoload",

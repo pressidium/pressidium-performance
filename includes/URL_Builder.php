@@ -63,6 +63,15 @@ final class URL_Builder {
     }
 
     /**
+     * Return the base URL to the `wp-content/uploads/pressidium-performance` directory.
+     *
+     * @return string Base URL, without a trailing slash.
+     */
+    public function get_base_url(): string {
+        return $this->base_url;
+    }
+
+    /**
      * Build a URL from the base URL and the given paths.
      *
      * @param string ...$paths URL segments to join.

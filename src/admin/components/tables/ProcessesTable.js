@@ -1,5 +1,5 @@
 import { useMemo } from '@wordpress/element';
-import {__, _n, sprintf} from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import Table, { Header, Row, Column } from 'components/Table';
 
@@ -13,7 +13,7 @@ function ProcessesTable(props) {
       <p>
         {__('No items in current batch.', 'pressidium-performance')}
       </p>
-    )
+    );
   }
 
   // Special case where we should only display the items count

@@ -90,13 +90,29 @@ final class File_Reader {
             ),
         );
 
-        if ( ! is_wp_error( $response ) ) {
-            return $response['body'];
+        if ( is_wp_error( $response ) ) {
+            throw new Filesystem_Exception(
+                sprintf( 'Could not retrieve file: %s', esc_html( $response->get_error_message() ) )
+            );
         }
 
-        throw new Filesystem_Exception(
-            sprintf( 'Could not retrieve file: %s', esc_html( $response->get_error_message() ) )
-        );
+        /*
+         * An HTTP error response is not a `WP_Error`, so without this check the body of an error
+         * page (a `404`, a `503`, a WAF challenge) would be treated as the contents of the file.
+         * Redirects are followed by `WP_Http`, so this is the status we ended up at.
+         */
+        $status_code = (int) wp_remote_retrieve_response_code( $response );
+
+        if ( $status_code !== 200 ) {
+            throw new Filesystem_Exception(
+                sprintf(
+                    'Could not retrieve file: expected status code 200, got %d',
+                    $status_code
+                )
+            );
+        }
+
+        return wp_remote_retrieve_body( $response );
     }
 
     /**

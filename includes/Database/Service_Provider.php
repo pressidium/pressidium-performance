@@ -13,6 +13,8 @@ use Pressidium\WP\Performance\Dependencies\League\Container\ServiceProvider\Abst
 use Pressidium\WP\Performance\Dependencies\Psr\Container\ContainerExceptionInterface;
 use Pressidium\WP\Performance\Dependencies\Psr\Container\NotFoundExceptionInterface;
 
+use Pressidium\WP\Performance\Database\Tables\Collector_State_Table;
+use Pressidium\WP\Performance\Database\Tables\Concatenations_Files_Table;
 use Pressidium\WP\Performance\Database\Tables\Concatenations_Pages_Table;
 use Pressidium\WP\Performance\Database\Tables\Concatenations_Table;
 use Pressidium\WP\Performance\Database\Tables\Optimizations_Table;
@@ -34,6 +36,8 @@ final class Service_Provider extends AbstractServiceProvider {
      * @var string[]
      */
     protected $provides = array(
+        'collector_state_table',
+        'concatenations_files_table',
         'concatenations_pages_table',
         'concatenations_table',
         'optimizations_table',
@@ -51,6 +55,12 @@ final class Service_Provider extends AbstractServiceProvider {
      * @return void
      */
     public function register(): void {
+        $this->getContainer()->add( 'collector_state_table', Collector_State_Table::class )
+             ->addArgument( $this->getContainer()->get( 'logger' ) );
+
+        $this->getContainer()->add( 'concatenations_files_table', Concatenations_Files_Table::class )
+             ->addArgument( $this->getContainer()->get( 'logger' ) );
+
         $this->getContainer()->add( 'concatenations_pages_table', Concatenations_Pages_Table::class )
              ->addArgument( $this->getContainer()->get( 'logger' ) );
 

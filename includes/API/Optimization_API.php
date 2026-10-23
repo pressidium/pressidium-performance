@@ -16,8 +16,11 @@ use Pressidium\WP\Performance\Optimizations\Image\Image_Optimization_Manager;
 use Pressidium\WP\Performance\Optimizations\Image\Converters\Converter_Manager;
 use Pressidium\WP\Performance\Database\Tables\Optimizations_Table;
 use Pressidium\WP\Performance\Database\Tables\Concatenations_Table;
+use Pressidium\WP\Performance\Optimizations\Minification\Minification_Cleaner;
+use Pressidium\WP\Performance\Optimizations\Concatenation\Concatenation_Cleaner;
 use Pressidium\WP\Performance\Utils\Numeric_Utils;
 use Pressidium\WP\Performance\Exceptions\Image_Conversion_Exception;
+use Pressidium\WP\Performance\Exceptions\Filesystem_Exception;
 use Pressidium\WP\Performance\Storage\Storage;
 
 use WP_Error;
@@ -52,6 +55,8 @@ final class Optimization_API extends API {
      * @param Optimizations_Table        $optimizations_table
      * @param Concatenations_Table       $concatenations_table
      * @param Storage                    $transient_storage
+     * @param Minification_Cleaner       $minification_cleaner
+     * @param Concatenation_Cleaner      $concatenation_cleaner
      */
     public function __construct(
         Logger $logger,
@@ -63,6 +68,8 @@ final class Optimization_API extends API {
         private readonly Optimizations_Table $optimizations_table,
         private readonly Concatenations_Table $concatenations_table,
         private readonly Storage $transient_storage,
+        private readonly Minification_Cleaner $minification_cleaner,
+        private readonly Concatenation_Cleaner $concatenation_cleaner,
     ) {
         parent::__construct( $logger );
 
@@ -266,6 +273,52 @@ final class Optimization_API extends API {
     }
 
     /**
+     * Handler for the `POST /pressidium-performance/v1/optimization/minification/clear` REST route.
+     *
+     * Deletes all minified files, their optimization records, and any cached
+     * decisions about files that should skip minification.
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_Error|WP_REST_Response
+     */
+    public function rest_clear_minifications( WP_REST_Request $request ): WP_Error|WP_REST_Response {
+        $nonce = $request->get_param( 'nonce' );
+
+        // Validate nonce
+        if ( ! wp_verify_nonce( $nonce, 'pressidium_performance_rest' ) ) {
+            $this->logger->error( 'Clearing minified files failed due to invalid nonce' );
+
+            return new WP_Error(
+                'invalid_nonce',
+                __( 'Invalid nonce.', 'pressidium-performance' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        try {
+            $data = $this->minification_cleaner->clear();
+        } catch ( Filesystem_Exception $exception ) {
+            $this->logger->error(
+                sprintf( 'Could not clear minified files: %s', esc_html( $exception->getMessage() ) )
+            );
+
+            return new WP_Error(
+                'minification_clear_failed',
+                __( 'Could not clear minified files.', 'pressidium-performance' ),
+                array( 'status' => 500 )
+            );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'success' => true,
+                'data'    => $data,
+            )
+        );
+    }
+
+    /**
      * Handler for the `GET /pressidium-performance/v1/optimization/concatenation/concatenations` REST route.
      *
      * Paginated list of concatenations.
@@ -338,6 +391,52 @@ final class Optimization_API extends API {
         );
 
         return rest_ensure_response( new WP_REST_Response( $data, 200, $headers ) );
+    }
+
+    /**
+     * Handler for the `POST /pressidium-performance/v1/optimization/concatenation/clear` REST route.
+     *
+     * Deletes all concatenated files, their concatenation records,
+     * and the page to bundle mappings pointing at them.
+     *
+     * @param WP_REST_Request $request
+     *
+     * @return WP_Error|WP_REST_Response
+     */
+    public function rest_clear_concatenations( WP_REST_Request $request ): WP_Error|WP_REST_Response {
+        $nonce = $request->get_param( 'nonce' );
+
+        // Validate nonce
+        if ( ! wp_verify_nonce( $nonce, 'pressidium_performance_rest' ) ) {
+            $this->logger->error( 'Clearing concatenated files failed due to invalid nonce' );
+
+            return new WP_Error(
+                'invalid_nonce',
+                __( 'Invalid nonce.', 'pressidium-performance' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        try {
+            $data = $this->concatenation_cleaner->clear();
+        } catch ( Filesystem_Exception $exception ) {
+            $this->logger->error(
+                sprintf( 'Could not clear concatenated files: %s', esc_html( $exception->getMessage() ) )
+            );
+
+            return new WP_Error(
+                'concatenation_clear_failed',
+                __( 'Could not clear concatenated files.', 'pressidium-performance' ),
+                array( 'status' => 500 )
+            );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'success' => true,
+                'data'    => $data,
+            )
+        );
     }
 
     /**
@@ -432,7 +531,7 @@ final class Optimization_API extends API {
             $concatenated_files_count = $this->concatenations_table->get_total_files_concatenated();
 
             $this->transient_storage->set(
-                'pressidium_concatenated_files_count',
+                'pressidium_performance_concatenated_files_count',
                 $concatenated_files_count,
                 $ttl
             );
@@ -556,6 +655,25 @@ final class Optimization_API extends API {
 
         $did_register_routes = $did_register_routes && register_rest_route(
             'pressidium-performance/v1',
+            '/optimization/minification/clear',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'rest_clear_minifications' ),
+                'args'                => array(
+                    'nonce' => array(
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+            )
+        );
+
+        $did_register_routes = $did_register_routes && register_rest_route(
+            'pressidium-performance/v1',
             '/optimization/concatenation/concatenations',
             array(
                 'methods'             => 'GET',
@@ -571,6 +689,25 @@ final class Optimization_API extends API {
                     ),
                     'per_page' => array(
                         'type' => 'integer',
+                    ),
+                ),
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+            )
+        );
+
+        $did_register_routes = $did_register_routes && register_rest_route(
+            'pressidium-performance/v1',
+            '/optimization/concatenation/clear',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'rest_clear_concatenations' ),
+                'args'                => array(
+                    'nonce' => array(
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
                     ),
                 ),
                 'permission_callback' => function () {

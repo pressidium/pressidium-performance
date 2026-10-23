@@ -17,12 +17,15 @@ use Pressidium\WP\Performance\Feedback\Service_Provider as Feedback_Service_Prov
 use Pressidium\WP\Performance\Cron\Service_Provider as Cron_Service_Provider;
 use Pressidium\WP\Performance\API\Service_Provider as API_Service_Provider;
 use Pressidium\WP\Performance\Database\Service_Provider as Database_Service_Provider;
+use Pressidium\WP\Performance\Edge\Service_Provider as Edge_Service_Provider;
 
 use Pressidium\WP\Performance\Hooks\Hooks_Manager;
 use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Logging\File_Logger;
 use Pressidium\WP\Performance\Logging\Console_Logger;
 use Pressidium\WP\Performance\Options\WP_Options;
+use Pressidium\WP\Performance\Options\Data_Encryption;
+use Pressidium\WP\Performance\Options\Encrypted_Options;
 use Pressidium\WP\Performance\Files\Filesystem;
 use Pressidium\WP\Performance\Storage\Transient;
 
@@ -34,11 +37,14 @@ use Pressidium\WP\Performance\Optimizations\Image\Image_Factory;
 
 use Pressidium\WP\Performance\Database\Database_Manager;
 use Pressidium\WP\Performance\Cron\Cron_Manager;
+use Pressidium\WP\Performance\Edge\Collector\Collector_Manager;
 
 use Pressidium\WP\Performance\Dependencies\League\Container\Container;
 
 use Pressidium\WP\Performance\Dependencies\Psr\Container\ContainerExceptionInterface;
 use Pressidium\WP\Performance\Dependencies\Psr\Container\NotFoundExceptionInterface;
+
+use Throwable;
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Forbidden' );
@@ -88,6 +94,7 @@ final class Plugin {
             $container->addServiceProvider( Concatenation_Service_Provider::class );
             $container->addServiceProvider( Image_Optimizations_Service_Provider::class );
             $container->addServiceProvider( API_Service_Provider::class );
+            $container->addServiceProvider( Edge_Service_Provider::class );
         } catch ( ContainerExceptionInterface | NotFoundExceptionInterface ) {
             $this->logger->error( 'Could not add service providers' );
         }
@@ -110,10 +117,12 @@ final class Plugin {
             $hooks_manager->register( $container->get( 'logs_api' ) );
             $hooks_manager->register( $container->get( 'background_processes_api' ) );
             $hooks_manager->register( $container->get( 'optimization_api' ) );
+            $hooks_manager->register( $container->get( 'edge_api' ) );
+            $hooks_manager->register( $container->get( 'caching_controller' ) );
+            $hooks_manager->register( $container->get( 'collector_change_tracker' ) );
             $hooks_manager->register( $container->get( 'image_optimization_manager' ) );
             $hooks_manager->register( $container->get( 'original_files_deletion_manager' ) );
             $hooks_manager->register( $container->get( 'feedback' ) );
-
         } catch ( ContainerExceptionInterface | NotFoundExceptionInterface $exception ) {
             $this->logger->error(
                 sprintf( 'Could not register hooks: %s', esc_html( $exception->getMessage() ) )
@@ -134,6 +143,8 @@ final class Plugin {
             $database_manager->register_table( $container->get( 'optimizations_table' ) );
             $database_manager->register_table( $container->get( 'concatenations_table' ) );
             $database_manager->register_table( $container->get( 'concatenations_pages_table' ) );
+            $database_manager->register_table( $container->get( 'concatenations_files_table' ) );
+            $database_manager->register_table( $container->get( 'collector_state_table' ) );
         } catch ( ContainerExceptionInterface | NotFoundExceptionInterface $exception ) {
             $this->logger->error(
                 sprintf( 'Could not register tables: %s', esc_html( $exception->getMessage() ) )
@@ -159,6 +170,7 @@ final class Plugin {
     private function register_cron_jobs( Cron_Manager $cron_manager, Container $container ): void {
         try {
             $cron_manager->register_cron_job( $container->get( 'clean_up_cron_job' ) );
+            $cron_manager->register_cron_job( $container->get( 'collector_cron_job' ) );
         } catch ( ContainerExceptionInterface | NotFoundExceptionInterface $exception ) {
             $this->logger->error(
                 sprintf( 'Could not register cron jobs: %s', esc_html( $exception->getMessage() ) )
@@ -166,7 +178,8 @@ final class Plugin {
         }
 
         if ( $this->just_activated ) {
-            $cron_manager->schedule_events();
+            // Scheduling applies the `cron_schedules` filter, whose callbacks translate strings, so wait for `init`
+            add_action( 'init', array( $cron_manager, 'schedule_events' ) );
         }
     }
 
@@ -210,6 +223,29 @@ final class Plugin {
     }
 
     /**
+     * Register collectors with the `Collector_Manager`.
+     *
+     * @param Collector_Manager $collector_manager Collector manager to register collectors with.
+     * @param Container         $container         Dependency injection container.
+     *
+     * @return void
+     */
+    private function register_collectors( Collector_Manager $collector_manager, Container $container ): void {
+        try {
+            $collector_manager->register( $container->get( 'wp_core_collector' ) );
+            $collector_manager->register( $container->get( 'php_collector' ) );
+            $collector_manager->register( $container->get( 'database_collector' ) );
+            $collector_manager->register( $container->get( 'plugin_collector' ) );
+            $collector_manager->register( $container->get( 'theme_collector' ) );
+            $collector_manager->register( $container->get( 'mu_plugin_collector' ) );
+        } catch ( ContainerExceptionInterface | NotFoundExceptionInterface $exception ) {
+            $this->logger->error(
+                sprintf( 'Could not register collectors: %s', esc_html( $exception->getMessage() ) )
+            );
+        }
+    }
+
+    /**
      * Initialize the plugin.
      *
      * @return void
@@ -230,6 +266,9 @@ final class Plugin {
 
         $options = new WP_Options();
         $container->add( 'options', $options );
+
+        $encrypted_options = new Encrypted_Options( new Data_Encryption(), $options );
+        $container->add( 'encrypted_options', $encrypted_options );
 
         $transient = new Transient();
         $container->add( 'transient', $transient );
@@ -278,9 +317,24 @@ final class Plugin {
 
         $this->add_service_providers( $container );
         $this->register_processors( $processor_manager, $container, $settings );
+        $this->register_collectors( $container->get( 'collector_manager' ), $container );
         $this->register_tables( $database_manager, $container );
         $this->register_cron_jobs( $cron_manager, $container );
         $this->register_hooks( $hooks_manager, $container );
+
+        try {
+            // Instantiated after the service providers are added, since it depends on the concatenation cleaner
+            $upgrader = new Upgrader( $this->logger, $settings, $container->get( 'concatenation_cleaner' ) );
+            $container->add( 'upgrader', $upgrader );
+
+            /*
+             * Run the upgrader on every request to check if the plugin was upgraded
+             * and if so, migrate the settings to the latest version and resave them.
+             */
+            $upgrader->maybe_upgrade();
+        } catch ( Throwable $throwable ) {
+            error_log( 'Pressidium Performance: Upgrade routine failed: ' . $throwable->getMessage() );
+        }
     }
 
 }

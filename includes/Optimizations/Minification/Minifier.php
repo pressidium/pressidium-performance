@@ -8,7 +8,6 @@
 
 namespace Pressidium\WP\Performance\Optimizations\Minification;
 
-use Pressidium\WP\Performance\Logging\Logger;
 use Pressidium\WP\Performance\Files\File;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,20 +22,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 interface Minifier {
 
     /**
-     * Minifier constructor.
-     *
-     * @param Logger                      $logger    An instance of `Logger`.
-     * @param File_Minification_Evaluator $evaluator An instance of `File_Minification_Evaluator`.
-     */
-    public function __construct( Logger $logger, File_Minification_Evaluator $evaluator );
-
-    /**
      * Minify the given file.
      *
      * @param File $file File to minify.
      *
-     * @return File Minified file.
+     * @return ?File Minified file or `null` if the file should not be minified.
      */
-    public function minify( File $file ): File;
+    public function minify( File $file ): ?File;
 
 }

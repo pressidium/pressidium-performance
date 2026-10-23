@@ -22,18 +22,20 @@ class Concatenate_Payload {
     /**
      * Concatenate_Payload constructor.
      *
-     * @param string    $file_uri        URI of one of the files to concatenate.
-     * @param ?string   $sri_hash        SRI of one of the files to concatenate, if applicable.
-     * @param string    $aggregated_hash Aggregated hash of the files to concatenate.
-     * @param string    $type            Type of the files to concatenate.
-     * @param int|false $post_id         Post ID to which the files to concatenate belong.
+     * @param string                   $file_uri        URI of one of the files to concatenate.
+     * @param ?array<string, string[]> $sri_hashes      SRI hashes of one of the files to concatenate, if applicable.
+     * @param string                   $aggregated_hash Aggregated hash of the files to concatenate.
+     * @param string                   $type            Type of the files to concatenate.
+     * @param int|false                $post_id         Post ID to which the files to concatenate belong.
+     * @param bool                     $starts_segment  Whether the file has to start a new segment of the bundle.
      */
     public function __construct(
         private readonly string $file_uri,
-        private readonly ?string $sri_hash,
+        private readonly ?array $sri_hashes,
         private readonly string $aggregated_hash,
         private readonly string $type,
-        private readonly int|false $post_id
+        private readonly int|false $post_id,
+        private readonly bool $starts_segment = false
     ) {}
 
     /**
@@ -73,12 +75,21 @@ class Concatenate_Payload {
     }
 
     /**
-     * Return the SRI hash of one of the files to concatenate, if applicable.
+     * Return the SRI hashes of one of the files to concatenate, if applicable.
      *
-     * @return ?string
+     * @return ?array<string, string[]>
      */
-    public function get_sri_hash(): ?string {
-        return $this->sri_hash;
+    public function get_sri_hashes(): ?array {
+        return $this->sri_hashes;
+    }
+
+    /**
+     * Whether the file has to start a new segment of the bundle.
+     *
+     * @return bool
+     */
+    public function starts_segment(): bool {
+        return isset( $this->starts_segment ) && $this->starts_segment;
     }
 
 }

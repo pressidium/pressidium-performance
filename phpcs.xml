@@ -8,6 +8,7 @@
     <exclude-pattern>*/phpunit.xml*</exclude-pattern>
     <exclude-pattern>*/theme/languages/*</exclude-pattern>
     <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*/test-theme/*</exclude-pattern>
     <exclude-pattern>*/cypress/integration/*</exclude-pattern>
 
     <!-- Exclude third-party code -->

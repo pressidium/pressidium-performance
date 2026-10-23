@@ -65,6 +65,21 @@ final class WP_Utils {
     }
 
     /**
+     * Return the blog ID of the current site.
+     *
+     * For single sites, this is always `1`.
+     *
+     * For multisites, this is the current blog ID.
+     * On the main site of a multisite, this will be `1`.
+     * On a subsite of a multisite, this will be the blog ID.
+     *
+     * @return int
+     */
+    public static function get_blog_id(): int {
+        return get_current_blog_id();
+    }
+
+    /**
      * Return the environment type of this WordPress website.
      *
      * @since 1.0.0
@@ -231,5 +246,106 @@ final class WP_Utils {
         $path = trailingslashit( wp_parse_url( self::get_request_uri(), PHP_URL_PATH ) );
         return md5( $path );
     }
+
+    /**
+     * Return the WordPress core version.
+     *
+     * @since 1.2.0
+     *
+     * @return string
+     */
+    public static function get_wp_version(): string {
+        return get_bloginfo( 'version' );
+    }
+
+    /**
+     * Return the database version.
+     *
+     * @since 1.2.0
+     *
+     * @return string
+     */
+    public static function get_db_version(): string {
+        global $wpdb;
+
+        return $wpdb->db_version();
+    }
+
+    /**
+     * Return the site locale (language).
+     *
+     * @since 1.2.0
+     *
+     * @return string
+     */
+    public static function get_locale(): string {
+        return get_locale();
+    }
+
+    /**
+     * Return the site timezone string.
+     *
+     * @since 1.2.0
+     *
+     * @return string
+     */
+    public static function get_timezone(): string {
+        return wp_timezone_string();
+    }
+
+    /**
+     * Return whether this is a WordPress multisite installation.
+     *
+     * @since 1.2.0
+     *
+     * @return bool
+     */
+    public static function is_multisite(): bool {
+        return is_multisite();
+    }
+
+    /**
+     * Return the multisite type.
+     *
+     * Returns 'subdomain' for subdomain-based multisites,
+     * 'subdirectory' for path-based multisites, or `null`
+     * if this is not a multisite installation.
+     *
+     * @since 1.2.0
+     *
+     * @return ?string
+     */
+    public static function get_multisite_type(): ?string {
+        if ( ! is_multisite() ) {
+            return null;
+        }
+
+        return defined( 'SUBDOMAIN_INSTALL' ) && SUBDOMAIN_INSTALL ? 'subdomain' : 'subdirectory';
+    }
+
+    /**
+     * Return the total number of users.
+     *
+     * @since 1.2.0
+     *
+     * @return int
+     */
+    public static function get_user_count(): int {
+        $user_count = count_users();
+
+        return $user_count['total_users'] ?? 0;
+    }
+
+    /**
+     * Return the PHP version.
+     *
+     * @since 1.2.0
+     *
+     * @return string
+     */
+    public static function get_php_version(): string {
+        return phpversion();
+    }
+
 
 }

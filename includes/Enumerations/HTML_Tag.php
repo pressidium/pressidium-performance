@@ -15,4 +15,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 enum HTML_Tag: string {
     case SCRIPT = 'SCRIPT';
     case LINK   = 'LINK';
+    case STYLE  = 'STYLE';
 }

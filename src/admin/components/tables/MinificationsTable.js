@@ -10,7 +10,7 @@ import Table, {
   Header,
   Row,
   Column,
-  Pagination
+  Pagination,
 } from 'components/Table';
 
 const LineWrapColumn = styled(Column)`
@@ -140,7 +140,7 @@ function MinificationsTable() {
               </LineWrapColumn>
               <Column style={{ minWidth: '280px' }}>
                 <span style={{ fontFamily: 'monospace' }}>
-                  {minification.hash}
+                  {minification.content_hash}
                 </span>
               </Column>
               <Column style={{ minWidth: '340px' }}>

@@ -34,6 +34,7 @@ final class Service_Provider extends AbstractServiceProvider {
         'optimization_api',
         'settings_api',
         'background_processes_api',
+        'edge_api',
     );
 
     /**
@@ -61,7 +62,9 @@ final class Service_Provider extends AbstractServiceProvider {
              ->addArgument( $this->getContainer()->get( 'converter_manager' ) )
              ->addArgument( $this->getContainer()->get( 'optimizations_table' ) )
              ->addArgument( $this->getContainer()->get( 'concatenations_table' ) )
-             ->addArgument( $this->getContainer()->get( 'transient' ) );
+             ->addArgument( $this->getContainer()->get( 'transient' ) )
+             ->addArgument( $this->getContainer()->get( 'minification_cleaner' ) )
+             ->addArgument( $this->getContainer()->get( 'concatenation_cleaner' ) );
 
         $this->getContainer()->add( 'settings_api', Settings_API::class )
              ->addArgument( $this->getContainer()->get( 'logger' ) )
@@ -71,6 +74,15 @@ final class Service_Provider extends AbstractServiceProvider {
              ->addArgument( $this->getContainer()->get( 'logger' ) )
              ->addArgument( $this->getContainer()->get( 'processor_manager' ) )
              ->addArgument( $this->getContainer()->get( 'image_optimization_manager' ) );
+
+        $this->getContainer()->add( 'edge_api', Edge_API::class )
+             ->addArgument( $this->getContainer()->get( 'logger' ) )
+             ->addArgument( $this->getContainer()->get( 'encrypted_options' ) )
+             ->addArgument( $this->getContainer()->get( 'edge_api_client' ) )
+             ->addArgument( $this->getContainer()->get( 'caching_controller' ) )
+             ->addArgument( $this->getContainer()->get( 'edge_collector_process' ) )
+             ->addArgument( $this->getContainer()->get( 'web_property' ) )
+             ->addArgument( $this->getContainer()->get( 'transient' ) );
     }
 
 }

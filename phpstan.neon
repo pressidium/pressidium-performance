@@ -19,6 +19,7 @@ parameters:
         - ./src/scss/*
         - ./src/ts/*
         - ./tests/*
+        - ./test-theme/*
         - ./types/*
     ignoreErrors:
         - '#Constant MINIMUM_WP_VERSION not found#'
