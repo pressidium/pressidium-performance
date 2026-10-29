@@ -86,7 +86,7 @@ GNU GPL v2 or later, check the [`LICENSE`](./LICENSE) file.
 
 <p align="center">
     <a href="https://pressidium.com/free-trial/?utm_source=ppplugin&utm_medium=ghreadme&utm_campaign=wpplugins">
-        <img width="850" src="./assets/images/banner.png" />
+        <img width="850" src="./assets/images/banner.webp" />
     </a>
 </p>
 
