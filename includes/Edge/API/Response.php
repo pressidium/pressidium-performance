@@ -26,6 +26,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class Response {
 
     /**
+     * @var array<string, mixed> Raw response from the API.
+     */
+    protected array $response_raw;
+
+    /**
      * @var ?string Body of the response as raw string.
      */
     protected ?string $body_raw = null;
@@ -51,9 +56,10 @@ abstract class Response {
     public function __construct( array $response_raw ) {
         $response_code = wp_remote_retrieve_response_code( $response_raw );
 
-        $this->status   = is_int( $response_code ) ? $response_code : null;
-        $this->body_raw = wp_remote_retrieve_body( $response_raw );
-        $this->body     = json_decode( $this->body_raw ?? '', true );
+        $this->response_raw = $response_raw;
+        $this->status       = is_int( $response_code ) ? $response_code : null;
+        $this->body_raw     = wp_remote_retrieve_body( $response_raw );
+        $this->body         = json_decode( $this->body_raw ?? '', true );
 
         // Consider any 2xx response as successful
         if ( $this->status === null || $this->status < 200 || $this->status > 299 ) {
@@ -108,6 +114,24 @@ abstract class Response {
      */
     public function get_status(): int {
         return $this->status;
+    }
+
+    /**
+     * Return the value of the given response header.
+     *
+     * @param string $name Header name (case-insensitive).
+     *
+     * @return ?string Header value, or `null` if the header is not present.
+     */
+    public function get_header( string $name ): ?string {
+        $value = wp_remote_retrieve_header( $this->response_raw, $name );
+
+        if ( is_array( $value ) ) {
+            // Header was sent multiple times, use the last value
+            $value = end( $value );
+        }
+
+        return $value === '' || $value === false ? null : strval( $value );
     }
 
     /**

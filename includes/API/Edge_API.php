@@ -246,14 +246,10 @@ final class Edge_API extends API {
             );
         }
 
-        $did_purge = $this->caching_controller->purge_all_caches();
+        $result = $this->caching_controller->purge_all_caches();
 
-        if ( ! $did_purge ) {
-            return new WP_Error(
-                'cache_purge_failed',
-                __( 'Failed to purge cache.', 'pressidium-performance' ),
-                array( 'status' => 500 )
-            );
+        if ( is_wp_error( $result ) ) {
+            return $result;
         }
 
         $this->logger->info( 'Successfully requested purge of the entire Pressidium EDGE cache' );
@@ -291,19 +287,15 @@ final class Edge_API extends API {
             $surrogate_keys['high'] = $cache_tags;
         }
 
-        $did_purge = $this->caching_controller->purge_cache(
+        $result = $this->caching_controller->purge_cache(
             $surrogate_keys,
             is_array( $uris ) ? $uris : array()
         );
 
-        if ( ! $did_purge ) {
+        if ( is_wp_error( $result ) ) {
             $this->logger->error( 'Failed to purge specific Pressidium EDGE assets' );
 
-            return new WP_Error(
-                'purge_failed',
-                __( 'Failed to purge cache.', 'pressidium-performance' ),
-                array( 'status' => 500 )
-            );
+            return $result;
         }
 
         $this->logger->info(
