@@ -19,6 +19,9 @@ use Pressidium\WP\Performance\Utils\Array_Utils;
 use Pressidium\WP\Performance\Utils\String_Utils;
 
 use Pressidium\WP\Performance\Exceptions\API\API_Exception;
+use Pressidium\WP\Performance\Exceptions\API\Rate_Limit_Exception;
+
+use WP_Error;
 
 use RuntimeException;
 
@@ -210,6 +213,65 @@ class Caching_Controller implements Actions {
     }
 
     /**
+     * Return an error for when caching is not enabled.
+     *
+     * @return WP_Error
+     */
+    private function get_caching_disabled_error(): WP_Error {
+        return new WP_Error(
+            'caching_disabled',
+            __( 'Pressidium EDGE caching is not enabled.', 'pressidium-performance' ),
+            array( 'status' => 500 ) // 500 Internal Server Error
+        );
+    }
+
+    /**
+     * Return an error for a failed cache invalidation request.
+     *
+     * @return WP_Error
+     */
+    private function get_purge_failed_error(): WP_Error {
+        return new WP_Error(
+            'purge_failed',
+            __( 'Failed to purge cache.', 'pressidium-performance' ),
+            array( 'status' => 500 ) // 500 Internal Server Error
+        );
+    }
+
+    /**
+     * Return a human-readable error for a rate-limited cache invalidation request.
+     *
+     * @param Rate_Limit_Exception $exception Rate limit exception.
+     *
+     * @return WP_Error
+     */
+    private function get_rate_limited_error( Rate_Limit_Exception $exception ): WP_Error {
+        $reset_after = $exception->get_reset_after();
+
+        if ( $reset_after !== null && $reset_after > 0 ) {
+            $message = sprintf(
+                /* translators: %s: Human-readable time until the purge limit resets (e.g. "5 mins"). */
+                __(
+                    'You have sent too many cache purge requests in a short period of time. Please try again in %s.',
+                    'pressidium-performance'
+                ),
+                human_time_diff( time(), time() + $reset_after )
+            );
+        } else {
+            $message = __(
+                'You have sent too many cache purge requests in a short period of time. Please wait a while and try again.',
+                'pressidium-performance'
+            );
+        }
+
+        return new WP_Error(
+            'rate_limited',
+            $message,
+            array( 'status' => 429 ) // 429 Too Many Requests
+        );
+    }
+
+    /**
      * Send a cache invalidation request to the Pressidium EDGE API.
      *
      * @param string[]                $domains        Domains to be purged.
@@ -218,21 +280,25 @@ class Caching_Controller implements Actions {
      * @param ?callable               $callback       Callback to be executed after the purge request is
      *                                                successfully sent.
      *
-     * @return bool Whether the cache invalidation request was sent successfully.
+     * @return true|WP_Error `true` if the cache invalidation request was sent successfully, `WP_Error` otherwise.
      */
     public function send_purge_cache_request(
         array $domains,
         array $surrogate_keys,
         array $uris = array(),
         ?callable $callback = null
-    ): bool {
+    ): bool|WP_Error {
         // Validations
         $has_surrogate_keys = ! empty( $surrogate_keys );
         $has_uris           = ! empty( $uris );
 
         if ( ! $has_surrogate_keys && ! $has_uris ) {
             // No surrogate keys or URIs to purge, bail early
-            return false;
+            return new WP_Error(
+                'nothing_to_purge',
+                __( 'Please add at least one cache tag or URL to purge.', 'pressidium-performance' ),
+                array( 'status' => 400 ) // 400 Bad Request
+            );
         }
 
         if ( ! $has_surrogate_keys ) {
@@ -284,10 +350,14 @@ class Caching_Controller implements Actions {
                 ->set_uris( $uris );
 
             $this->edge_api_client->cache()->purge( $purge_request );
+        } catch ( Rate_Limit_Exception $exception ) {
+            $this->logger->error( sprintf( 'Failed to purge cache: %s', esc_html( $exception->getMessage() ) ) );
+
+            return $this->get_rate_limited_error( $exception );
         } catch ( API_Exception | RuntimeException $exception ) {
             $this->logger->error( sprintf( 'Failed to purge cache: %s', esc_html( $exception->getMessage() ) ) );
 
-            return false;
+            return $this->get_purge_failed_error();
         }
 
         if ( is_callable( $callback ) ) {
@@ -309,18 +379,18 @@ class Caching_Controller implements Actions {
      * @param array<string, string[]> $surrogate_keys Surrogate keys to be purged.
      * @param string[]                $uris           URIs to be purged.
      *
-     * @return bool Whether the purge request was sent successfully.
+     * @return true|WP_Error `true` if the purge request was sent successfully, `WP_Error` otherwise.
      */
-    public function purge_cache( array $surrogate_keys = array(), array $uris = array() ): bool {
+    public function purge_cache( array $surrogate_keys = array(), array $uris = array() ): bool|WP_Error {
         if ( ! $this->is_caching_enabled() ) {
-            return false;
+            return $this->get_caching_disabled_error();
         }
 
         $domains = Domains_Provider::get_current_site_domains();
 
-        $did_purge = $this->send_purge_cache_request( $domains, $surrogate_keys, $uris );
+        $result = $this->send_purge_cache_request( $domains, $surrogate_keys, $uris );
 
-        if ( ! $did_purge ) {
+        if ( is_wp_error( $result ) ) {
             $this->logger->error(
                 'Failed to purge cache',
                 array(
@@ -329,7 +399,7 @@ class Caching_Controller implements Actions {
                 )
             );
 
-            return false;
+            return $result;
         }
 
         /**
@@ -347,11 +417,11 @@ class Caching_Controller implements Actions {
     /**
      * Purge all caches via the Edge API.
      *
-     * @return bool Whether the purge request was sent successfully.
+     * @return true|WP_Error `true` if the purge request was sent successfully, `WP_Error` otherwise.
      */
-    public function purge_all_caches(): bool {
+    public function purge_all_caches(): bool|WP_Error {
         if ( ! $this->is_caching_enabled() ) {
-            return false;
+            return $this->get_caching_disabled_error();
         }
 
         $domains = Domains_Provider::get_all_domains();
@@ -359,12 +429,18 @@ class Caching_Controller implements Actions {
         try {
             $purge_all_request = ( new Purge_All_Request() )->set_domains( $domains );
             $this->edge_api_client->cache()->purge_all( $purge_all_request );
+        } catch ( Rate_Limit_Exception $exception ) {
+            $this->logger->error(
+                sprintf( 'Failed to purge all caches: %s', esc_html( $exception->getMessage() ) )
+            );
+
+            return $this->get_rate_limited_error( $exception );
         } catch ( API_Exception | RuntimeException $exception ) {
             $this->logger->error(
                 sprintf( 'Failed to purge all caches: %s', esc_html( $exception->getMessage() ) )
             );
 
-            return false;
+            return $this->get_purge_failed_error();
         }
 
         /**
@@ -512,14 +588,14 @@ class Caching_Controller implements Actions {
             );
         };
 
-        $purged = $this->send_purge_cache_request(
+        $result = $this->send_purge_cache_request(
             $domains,
             $cache_tags,
             $uris,
             $on_purge_callback
         );
 
-        if ( ! $purged ) {
+        if ( is_wp_error( $result ) ) {
             // Failed to send the purge request, bail early
             return;
         }
