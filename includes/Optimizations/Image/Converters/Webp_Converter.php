@@ -116,6 +116,20 @@ class Webp_Converter implements Converter {
     }
 
     /**
+     * Return the destination path of the converted image.
+     *
+     * @param string $dir_name  Directory name.
+     * @param string $filename  Filename without extension.
+     * @param string $suffix    Filename suffix.
+     * @param string $extension File extension.
+     *
+     * @return string
+     */
+    private function get_destination_path( string $dir_name, string $filename, string $suffix, string $extension ): string {
+        return sprintf( '%s/%s_%s.%s', $dir_name, $filename, $suffix, $extension );
+    }
+
+    /**
      * Return a unique filename suffix to avoid overwriting existing files.
      *
      * @throws Image_Conversion_Exception If a unique filename could not be generated after multiple attempts.
@@ -131,13 +145,7 @@ class Webp_Converter implements Converter {
         $suffix      = $base_suffix;
 
         // Initial destination path
-        $destination_path = sprintf(
-            '%s/%s%s.%s',
-            $dir_name,
-            $filename,
-            $suffix,
-            $extension
-        );
+        $destination_path = $this->get_destination_path( $dir_name, $filename, $suffix, $extension );
 
         $max_attempts = 5;
         $counter      = 1;
@@ -145,13 +153,7 @@ class Webp_Converter implements Converter {
         while ( file_exists( $destination_path ) ) {
             $suffix = sprintf( '%s_%d', $base_suffix, $counter );
 
-            $destination_path = sprintf(
-                '%s/%s%s.%s',
-                $dir_name,
-                $filename,
-                $suffix,
-                $extension
-            );
+            $destination_path = $this->get_destination_path( $dir_name, $filename, $suffix, $extension );
 
             ++$counter;
 
@@ -169,6 +171,7 @@ class Webp_Converter implements Converter {
      * Convert the specified image.
      *
      * @throws Image_Conversion_Exception If no image is loaded.
+     * @throws Image_Conversion_Exception If the destination file already exists.
      * @throws Image_Conversion_Exception If an error occurs during image saving.
      *
      * @return Image Converted image.
@@ -185,8 +188,7 @@ class Webp_Converter implements Converter {
             self::EXTENSION
         );
 
-        $destination_path = sprintf(
-            '%s/%s_%s.%s',
+        $destination_path = $this->get_destination_path(
             $path_info['dirname'],
             $path_info['filename'],
             $suffix,
@@ -199,6 +201,13 @@ class Webp_Converter implements Converter {
             $suffix,
             self::EXTENSION
         );
+
+        // Never overwrite an existing file (e.g. one created after the suffix was picked)
+        if ( file_exists( $destination_path ) ) {
+            throw new Image_Conversion_Exception(
+                sprintf( 'Destination file already exists: %s', esc_html( $destination_path ) )
+            );
+        }
 
         $result = $this->image_editor->save( $destination_path, self::MIME_TYPE );
 

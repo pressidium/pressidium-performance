@@ -60,7 +60,7 @@ function SettingsPanel() {
     docs: 'https://github.com/pressidium/pressidium-performance/wiki',
     review: 'https://wordpress.org/support/plugin/pressidium-performance/reviews/#new-post',
     github: 'https://github.com/pressidium/pressidium-performance/blob/master/CONTRIBUTING.md',
-    pressidium: 'https://pressidium.com/free-trial/?utm_source=ppplugin&utm_medium=metabox&utm_campaign=wpplugins',
+    pressidium: 'https://pressidium.com/wordpress-hosting-plans/?utm_source=ppplugin&utm_medium=metabox&utm_campaign=wpplugins',
   };
 
   const appendNotice = useCallback(({
@@ -909,7 +909,7 @@ function SettingsPanel() {
                   </PanelRow>
                   <PanelRow>
                     <span style={{ fontWeight: 600 }}>
-                      {__('Enjoy 14-days of superior hosting for free!', 'pressidium-performance')}
+                      {__('Try Pressidium now and take your WordPress site to the next level.', 'pressidium-performance')}
                     </span>
                   </PanelRow>
                   <PanelRow>
@@ -919,7 +919,7 @@ function SettingsPanel() {
                       target="_blank"
                       variant="secondary"
                     >
-                      {__('Start your Free Trial', 'pressidium-performance')}
+                      {__('START NOW RISK FREE', 'pressidium-performance')}
                     </Button>
                   </PanelRow>
                 </PanelBody>
