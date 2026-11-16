@@ -147,6 +147,7 @@ class Image_Optimization_Process extends Background_Process {
      * @throws Image_Conversion_Exception If an error occurs during image loading.
      * @throws Image_Conversion_Exception If no image is loaded.
      * @throws Image_Conversion_Exception If an error occurs during quality setting.
+     * @throws Image_Conversion_Exception If the destination file already exists.
      * @throws Image_Conversion_Exception If an error occurs during image saving.
      *
      * @param Image $image Image to optimize.
