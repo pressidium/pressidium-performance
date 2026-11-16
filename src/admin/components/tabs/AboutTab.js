@@ -44,7 +44,7 @@ function AboutTab() {
       technology: 'https://pressidium.com/technology/?utm_source=ppplugin&utm_medium=about&utm_campaign=wpplugins',
       dashboard: 'https://pressidium.com/dashboard/?utm_source=ppplugin&utm_medium=about&utm_campaign=wpplugins',
       features: 'https://pressidium.com/features/?utm_source=ppplugin&utm_medium=about&utm_campaign=wpplugins',
-      trial: 'https://pressidium.com/free-trial/?utm_source=ppplugin&utm_medium=about&utm_campaign=wpplugins',
+      plans: 'https://pressidium.com/wordpress-hosting-plans/?utm_source=ppplugin&utm_medium=about&utm_campaign=wpplugins',
     },
   };
 
@@ -289,15 +289,22 @@ function AboutTab() {
             </FlexItem>
             <FlexItem>
               <a
-                href={urls.pressidium.trial}
+                href={urls.pressidium.plans}
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <img
-                  src={promo}
-                  alt={__('Pressidium. Enjoy 14-days of superior WordPress hosting for free! Learn more.', 'pressidium-performance')}
-                  style={{ width: '100%', maxWidth: '930px', marginTop: '1em' }}
-                />
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcSet={`${promo.webp} 1x, ${promo.webp_2x} 2x`}
+                  />
+                  <img
+                    src={promo.png}
+                    srcSet={`${promo.png} 1x, ${promo.png_2x} 2x`}
+                    alt={__('Pressidium. Enjoy 14-days of superior WordPress hosting for free! Learn more.', 'pressidium-performance')}
+                    style={{ width: '100%', maxWidth: '930px', marginTop: '1em' }}
+                  />
+                </picture>
               </a>
             </FlexItem>
           </Flex>

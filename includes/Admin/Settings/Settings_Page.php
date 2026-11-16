@@ -298,7 +298,12 @@ final class Settings_Page extends Page implements Actions, Filters {
                 'domain'                 => WP_Utils::get_domain(),
                 'assets'                 => array(
                     'icon'                 => esc_url( PLUGIN_URL . 'assets/images/icon.webp' ),
-                    'promo'                => esc_url( PLUGIN_URL . 'assets/images/promo.webp' ),
+                    'promo'                => array(
+                        'webp'    => esc_url( PLUGIN_URL . 'assets/images/promo.webp' ),
+                        'webp_2x' => esc_url( PLUGIN_URL . 'assets/images/promo@2x.webp' ),
+                        'png'     => esc_url( PLUGIN_URL . 'assets/images/promo.png' ),
+                        'png_2x'  => esc_url( PLUGIN_URL . 'assets/images/promo@2x.png' ),
+                    ),
                     'edge_hero'            => esc_url( PLUGIN_URL . 'assets/images/edge-hero.webp' ),
                     'edge_hero_alt'        => esc_url( PLUGIN_URL . 'assets/images/edge-hero-alt.webp' ),
                     'edge_logo'            => esc_url( PLUGIN_URL . 'assets/images/edge-logo.svg' ),
