@@ -6,7 +6,7 @@ Tags: performance, optimizations, image optimization, convert webp, convert avif
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable Tag: 1.2.0
+Stable Tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -160,6 +160,10 @@ If you have spotted any bugs, or would like to request additional features from 
 7. Monitor every optimization task running behind the scenes.
 
 == Changelog ==
+
+= 1.2.1: Nov 16, 2026 =
+
+* Fix an issue where images with the same name but different extensions could overwrite each other when optimized
 
 = 1.2.0: Oct 23, 2026 =
 
